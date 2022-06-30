@@ -12,13 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-library aft;
+import 'package:aft/src/utils/emphasize_text.dart';
 
-export 'src/commands/amplify_command.dart';
-export 'src/commands/deps/deps_command.dart';
-export 'src/commands/generate_sdk_command.dart';
-export 'src/commands/integration_test_command.dart';
-export 'src/commands/list_packages_command.dart';
-export 'src/commands/test_command.dart';
-export 'src/commands/unit_test_command.dart';
-export 'src/models.dart';
+class TestScore {
+  TestScore({this.passed = 0, this.skipped = 0, this.failed = 0});
+
+  /// The number of passed tests
+  int passed;
+
+  /// The number of failed tests
+  int failed;
+
+  /// The number of skipped tests
+  int skipped;
+
+  String get prettyTotal {
+    return '${formatSuccess('+${passed.toString()}')} ${formatWarning('~${skipped.toString()}')} -${formatException('-${failed.toString()}')}';
+  }
+}
