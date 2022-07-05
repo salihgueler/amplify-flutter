@@ -13,37 +13,49 @@
 // limitations under the License.
 
 import 'dart:async';
+import 'package:amplify_core/src/logger/level_extension.dart';
 import 'package:logging/logging.dart';
 
-import '../amplify_logger.dart';
-
-enum Category { Analytics, API, Auth, Storage, DataStore }
+import '../category/amplify_categories.dart';
+import 'log_level.dart';
 
 class AmplifyLogger {
-  AmplifyLogger._(this._logger);
-
-  set logLevel(LogLevel logLevel) {
-    _logger.level = logLevel.level;
-  }
-
-  static final Map<String, StreamSubscription<LogRecord>> _subscriptions = {};
+  static final Map<AmplifyLoggerPlugin, StreamSubscription<LogRecord>>
+      _subscriptions = {};
   final Logger _logger;
 
-  factory AmplifyLogger([String namespace = 'Amplify']) =>
+  factory AmplifyLogger([String namespace = 'AWS.Amplify']) =>
       AmplifyLogger._(Logger(namespace));
 
-  factory AmplifyLogger.category(Category category) {
-    return AmplifyLogger._(Logger('Amplify.${category.name}'));
-  }
+  factory AmplifyLogger.category(Category category) =>
+      AmplifyLogger._(Logger('AWS.Amplify.${category.name}'));
+
+  AmplifyLogger._(this._logger);
 
   void registerPlugin(AmplifyLoggerPlugin plugin) {
-    final currentSubscription = _subscriptions.remove(_logger.fullName);
+    unregisterPlugin(plugin);
+    _subscriptions[plugin] = _logger.onRecord.listen(plugin.handleLogRecord);
+  }
+
+  void unregisterPlugin(AmplifyLoggerPlugin plugin) {
+    final currentSubscription = _subscriptions.remove(plugin);
     if (currentSubscription != null) {
       unawaited(currentSubscription.cancel());
     }
-    _subscriptions[_logger.fullName] =
-        _logger.onRecord.listen(plugin.handleLogRecord);
   }
+
+  void unregisterAllPlugins() {
+    for (final plugin in List.of(_subscriptions.keys)) {
+      unregisterPlugin(plugin);
+    }
+  }
+
+  set logLevel(LogLevel logLevel) {
+    hierarchicalLoggingEnabled = true;
+    _logger.level = logLevel.level;
+  }
+
+  LogLevel get logLevel => _logger.level.logLevel;
 
   /// Log a message with a log level of [Level.FINER].
   void verbose(String message) {

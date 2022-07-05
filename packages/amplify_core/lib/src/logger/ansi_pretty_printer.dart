@@ -13,13 +13,12 @@
 // limitations under the License.
 
 import 'package:amplify_core/amplify_core.dart';
-import 'package:amplify_logger/src/level_extension.dart';
 import 'package:ansicolor/ansicolor.dart';
 import 'package:logging/logging.dart';
 
-import '../amplify_logger.dart';
-
 class AnsiPrettyPrinter implements AmplifyLoggerPlugin {
+  final AnsiPen _pen = AnsiPen();
+
   AnsiPrettyPrinter() {
     ansiColorDisabled = false;
   }
@@ -29,7 +28,7 @@ class AnsiPrettyPrinter implements AmplifyLoggerPlugin {
     final buffer = StringBuffer();
 
     // Log Level
-    buffer.write(record.level.formattedString);
+    buffer.write(_printLevel(record.level));
 
     // Log Namespace
     buffer.write(' ');
@@ -48,8 +47,38 @@ class AnsiPrettyPrinter implements AmplifyLoggerPlugin {
   }
 
   String _formatLogNamespace(String? namespace) {
-    return (AnsiPen()
+    String result = (_pen
       ..white(bold: true)
       ..gray(level: .2, bg: true))(' $namespace ');
+    _pen.reset();
+    return result;
+  }
+
+  String _printLevel(Level level) {
+    String result;
+    if (level <= Level.FINER) {
+      result = (_pen
+            ..white(bold: true)
+            ..gray(level: .8, bg: true))(' V ')
+          .toString();
+    } else if (level <= Level.FINE) {
+      result = (_pen
+        ..white(bold: true)
+        ..gray(level: .6, bg: true))(' D ');
+    } else if (level <= Level.INFO) {
+      result = (_pen
+        ..white(bold: true)
+        ..blue(bg: true))(' I ');
+    } else if (level <= Level.WARNING) {
+      result = (_pen
+        ..white(bold: true)
+        ..yellow(bg: true))(' W ');
+    } else {
+      result = (_pen
+        ..white(bold: true)
+        ..red(bg: true))(' E ');
+    }
+    _pen.reset();
+    return result;
   }
 }

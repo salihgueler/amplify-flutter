@@ -106,7 +106,9 @@ export 'src/util/serializable.dart';
 export 'src/util/uuid.dart';
 
 // Logger
-export 'package:amplify_logger/amplify_logger.dart';
+export 'src/logger/amplify_logger.dart';
+export 'src/logger/log_level.dart';
+export 'src/logger/ansi_pretty_printer.dart';
 
 /// Top level singleton Amplify object.
 AmplifyClass get Amplify {

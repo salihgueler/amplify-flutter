@@ -38,8 +38,9 @@ enum LogLevel implements Comparable<LogLevel> {
   /// Highest priority log to use as threshold value to prevent any logs from being emitted
   none;
 
+  @override
   int compareTo(LogLevel other) {
-    return this.index - other.index;
+    return index - other.index;
   }
 
   bool operator >(LogLevel value) => index > value.index;
@@ -61,37 +62,5 @@ enum LogLevel implements Comparable<LogLevel> {
         return Level.OFF;
     }
     return Level.ALL;
-  }
-
-  /// Creates a formatted string based on the log level.
-  String toFormattedString() {
-    switch (this) {
-      case LogLevel.verbose:
-        return (AnsiPen()
-              ..white(bold: true)
-              ..gray(level: .8, bg: true))(' V ')
-            .toString();
-      case LogLevel.info:
-        return (AnsiPen()
-          ..white(bold: true)
-          ..blue(bg: true))(' I ');
-      case LogLevel.debug:
-        return (AnsiPen()
-          ..white(bold: true)
-          ..gray(level: .6, bg: true))(' D ');
-      case LogLevel.warn:
-        return (AnsiPen()
-          ..white(bold: true)
-          ..yellow(bg: true))(' W ');
-      case LogLevel.error:
-        return (AnsiPen()
-          ..white(bold: true)
-          ..red(bg: true))(' E ');
-      default:
-        return (AnsiPen()
-              ..white(bold: true)
-              ..gray(level: .8, bg: true))(
-            ' ' + this.toString().substring(0, 1) + ' ');
-    }
   }
 }

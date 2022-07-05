@@ -103,7 +103,7 @@ abstract class AmplifyClass {
       );
     }
 
-    AmplifyLogger.initDefaultLogHandler();
+    AmplifyLogger().registerPlugin(AnsiPrettyPrinter());
 
     await configurePlatform(configuration);
     _configCompleter.complete(amplifyConfig);
