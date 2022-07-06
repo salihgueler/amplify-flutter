@@ -13,6 +13,8 @@
  * permissions and limitations under the License.
  */
 
+import 'dart:io';
+
 import 'package:amplify_authenticator/amplify_authenticator.dart';
 import 'package:amplify_authenticator/src/keys.dart';
 import 'package:amplify_authenticator/src/screens/authenticator_screen.dart';
@@ -97,12 +99,14 @@ abstract class AuthenticatorPage {
 
   /// Then I see User not found banner
   Future<void> expectUserNotFound() async => expectError(
-         'User does not exist',
+        Platform.isAndroid ? 'User not found' : 'User does not exist',
       );
 
   /// Then I see Invalid code
   Future<void> expectInvalidCode() async => expectError(
-        'Invalid code or auth state for the user',
+        Platform.isIOS
+            ? 'Invalid code or auth state for the user'
+            : 'Confirmation code entered is not correct.',
       );
 
   /// Then I see Username/client id combination not found banner.
@@ -117,7 +121,15 @@ abstract class AuthenticatorPage {
 
   /// Then I see Invalid verification code
   Future<void> expectInvalidVerificationCode() async {
-    await expectError('Invalid verification code provided, please try again.');
+    if (Platform.isAndroid) {
+      await expectError('Confirmation code entered is not correct.');
+    } else if (Platform.isIOS) {
+      await expectError(
+        'Invalid verification code provided, please try again.',
+      );
+    } else {
+      throw Exception('Unsupprted platform');
+    }
   }
 
   Future<void> selectCountryCode({
