@@ -64,7 +64,9 @@ class ContentBlockRenderer extends StatelessWidget {
     if (block.toolUse != null) {
       return ToolUseCard(
         toolUse: block.toolUse!,
-        onTap: onToolUseTap != null ? () => onToolUseTap!(block.toolUse!) : null,
+        onTap: onToolUseTap != null
+            ? () => onToolUseTap!(block.toolUse!)
+            : null,
       );
     }
 
@@ -125,10 +127,7 @@ class ContentBlockRenderer extends StatelessWidget {
       widgets.add(
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: CodeBlockView(
-            code: code.trimRight(),
-            language: language,
-          ),
+          child: CodeBlockView(code: code.trimRight(), language: language),
         ),
       );
 

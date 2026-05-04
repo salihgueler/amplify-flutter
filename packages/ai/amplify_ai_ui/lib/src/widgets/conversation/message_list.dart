@@ -23,8 +23,11 @@ class MessageList extends StatefulWidget {
   final EdgeInsets padding;
 
   /// Optional custom message bubble builder.
-  final Widget Function(BuildContext context, ConversationDisplayMessage message)?
-      messageBubbleBuilder;
+  final Widget Function(
+    BuildContext context,
+    ConversationDisplayMessage message,
+  )?
+  messageBubbleBuilder;
 
   const MessageList({
     super.key,

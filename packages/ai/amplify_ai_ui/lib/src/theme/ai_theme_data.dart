@@ -102,23 +102,31 @@ class AIThemeData {
     final isLight = brightness == Brightness.light;
     return AIThemeData(
       brightness: brightness,
-      userBubbleColor:
-          isLight ? const Color(0xFF1A73E8) : const Color(0xFF4A90D9),
-      assistantBubbleColor:
-          isLight ? const Color(0xFFF1F3F4) : const Color(0xFF2D2D2D),
+      userBubbleColor: isLight
+          ? const Color(0xFF1A73E8)
+          : const Color(0xFF4A90D9),
+      assistantBubbleColor: isLight
+          ? const Color(0xFFF1F3F4)
+          : const Color(0xFF2D2D2D),
       userTextColor: Colors.white,
-      assistantTextColor:
-          isLight ? const Color(0xFF202124) : const Color(0xFFE8EAED),
-      inputBackgroundColor:
-          isLight ? const Color(0xFFF8F9FA) : const Color(0xFF1E1E1E),
-      sendButtonColor:
-          isLight ? const Color(0xFF1A73E8) : const Color(0xFF4A90D9),
-      sendButtonDisabledColor:
-          isLight ? const Color(0xFFDADCE0) : const Color(0xFF5F6368),
-      toolCardColor:
-          isLight ? const Color(0xFFFFF8E1) : const Color(0xFF3E3517),
-      codeBlockColor:
-          isLight ? const Color(0xFF263238) : const Color(0xFF1E1E1E),
+      assistantTextColor: isLight
+          ? const Color(0xFF202124)
+          : const Color(0xFFE8EAED),
+      inputBackgroundColor: isLight
+          ? const Color(0xFFF8F9FA)
+          : const Color(0xFF1E1E1E),
+      sendButtonColor: isLight
+          ? const Color(0xFF1A73E8)
+          : const Color(0xFF4A90D9),
+      sendButtonDisabledColor: isLight
+          ? const Color(0xFFDADCE0)
+          : const Color(0xFF5F6368),
+      toolCardColor: isLight
+          ? const Color(0xFFFFF8E1)
+          : const Color(0xFF3E3517),
+      codeBlockColor: isLight
+          ? const Color(0xFF263238)
+          : const Color(0xFF1E1E1E),
       messageTextStyle: TextStyle(
         fontSize: 15,
         height: 1.4,
@@ -139,11 +147,9 @@ class AIThemeData {
       bubblePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       messageSpacing: 8,
       cardBorderRadius: BorderRadius.circular(12),
-      primaryColor:
-          isLight ? const Color(0xFF1A73E8) : const Color(0xFF4A90D9),
+      primaryColor: isLight ? const Color(0xFF1A73E8) : const Color(0xFF4A90D9),
       errorColor: isLight ? const Color(0xFFD93025) : const Color(0xFFF28B82),
-      surfaceColor:
-          isLight ? const Color(0xFFFFFFFF) : const Color(0xFF121212),
+      surfaceColor: isLight ? const Color(0xFFFFFFFF) : const Color(0xFF121212),
     );
   }
 

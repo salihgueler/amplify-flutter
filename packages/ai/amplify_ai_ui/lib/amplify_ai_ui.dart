@@ -12,7 +12,7 @@
 /// import 'package:amplify_ai_ui/amplify_ai_ui.dart';
 ///
 /// // Drop-in chat widget
-/// AmplifyAIConversation(
+/// AIConversation(
 ///   controller: AIConversationController(conversationClient: client),
 /// )
 /// ```
@@ -21,14 +21,22 @@ library amplify_ai_ui;
 // Theme
 export 'src/theme/ai_theme.dart';
 export 'src/theme/ai_theme_data.dart';
+export 'src/theme/default_theme.dart';
+
+// State
+export 'src/state/ai_client_state.dart';
+export 'src/state/content_from_events.dart';
 
 // Providers
 export 'src/providers/ai_conversation_provider.dart';
+export 'src/providers/ai_generation_provider.dart';
+export 'src/providers/ai_providers.dart';
 
 // Controller
 export 'src/widgets/conversation/ai_conversation_controller.dart';
 
 // Conversation widgets
+export 'src/widgets/conversation/ai_conversation.dart';
 export 'src/widgets/conversation/amplify_ai_conversation.dart';
 export 'src/widgets/conversation/message_bubble.dart';
 export 'src/widgets/conversation/message_list.dart';
@@ -47,6 +55,14 @@ export 'src/widgets/tools/tool_progress_indicator.dart';
 
 // Generation widgets
 export 'src/widgets/generation/ai_generation_view.dart';
+export 'src/widgets/generation/ai_generation_controller.dart';
+
+// Common widgets
+export 'src/widgets/common/ai_avatar.dart';
+export 'src/widgets/common/ai_loading_indicator.dart';
+export 'src/widgets/common/ai_error_view.dart';
+export 'src/widgets/common/content_block_renderer.dart';
+export 'src/widgets/common/code_block_view.dart';
 
 // Content widgets
 export 'src/widgets/content/content_block_renderer.dart';

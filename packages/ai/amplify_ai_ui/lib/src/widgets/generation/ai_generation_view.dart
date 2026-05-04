@@ -198,8 +198,9 @@ class _AIGenerationViewState extends State<AIGenerationView> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(theme.userTextColor),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      theme.userTextColor,
+                    ),
                   ),
                 )
               : const Icon(Icons.auto_awesome, size: 18),
@@ -230,10 +231,7 @@ class _AIGenerationViewState extends State<AIGenerationView> {
             valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
           ),
           const SizedBox(height: 12),
-          Text(
-            'Generating...',
-            style: theme.captionTextStyle,
-          ),
+          Text('Generating...', style: theme.captionTextStyle),
         ],
       ),
     );
@@ -273,20 +271,14 @@ class _AIGenerationViewState extends State<AIGenerationView> {
       decoration: BoxDecoration(
         color: theme.assistantBubbleColor,
         borderRadius: theme.cardBorderRadius,
-        border: Border.all(
-          color: theme.primaryColor.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: theme.primaryColor.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                Icons.auto_awesome,
-                size: 16,
-                color: theme.primaryColor,
-              ),
+              Icon(Icons.auto_awesome, size: 16, color: theme.primaryColor),
               const SizedBox(width: 6),
               Text(
                 'Result',

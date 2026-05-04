@@ -19,7 +19,7 @@ class MessageBubble extends StatelessWidget {
 
   /// Optional custom builder for message content.
   final Widget Function(BuildContext context, ConversationMessage message)?
-      contentBuilder;
+  contentBuilder;
 
   /// Whether to show the message timestamp.
   final bool showTimestamp;
@@ -43,18 +43,17 @@ class MessageBubble extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: theme.messageSpacing),
       child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isUser && avatar != null) ...[
-            avatar!,
-            const SizedBox(width: 8),
-          ],
+          if (!isUser && avatar != null) ...[avatar!, const SizedBox(width: 8)],
           Flexible(
             child: Column(
-              crossAxisAlignment:
-                  isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: isUser
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
                 Container(
                   constraints: BoxConstraints(
@@ -81,17 +80,17 @@ class MessageBubble extends StatelessWidget {
               ],
             ),
           ),
-          if (isUser && avatar != null) ...[
-            const SizedBox(width: 8),
-            avatar!,
-          ],
+          if (isUser && avatar != null) ...[const SizedBox(width: 8), avatar!],
         ],
       ),
     );
   }
 
   Widget _buildDefaultContent(
-      BuildContext context, AIThemeData theme, bool isUser) {
+    BuildContext context,
+    AIThemeData theme,
+    bool isUser,
+  ) {
     final contentBlocks = message.content;
     if (contentBlocks.isEmpty) {
       return const SizedBox.shrink();

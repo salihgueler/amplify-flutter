@@ -20,11 +20,7 @@ class AITheme extends InheritedWidget {
   /// The theme data to provide to descendants.
   final AIThemeData data;
 
-  const AITheme({
-    super.key,
-    required this.data,
-    required super.child,
-  });
+  const AITheme({super.key, required this.data, required super.child});
 
   /// Retrieves the closest [AIThemeData] from the widget tree.
   ///

@@ -82,18 +82,13 @@ class AIConversationController extends ChangeNotifier {
   StreamSubscription<ConversationStreamEvent>? _streamSubscription;
 
   /// Creates a controller with the given conversation client.
-  AIConversationController({
-    required this.conversationClient,
-  });
+  AIConversationController({required this.conversationClient});
 
   /// Loads an existing conversation by ID, or creates a new one.
   ///
   /// If [conversationId] is provided, fetches that conversation and its
   /// message history. Otherwise, creates a new conversation.
-  Future<void> loadConversation({
-    String? conversationId,
-    String? name,
-  }) async {
+  Future<void> loadConversation({String? conversationId, String? name}) async {
     _setState(ConversationState.loading);
     _errorMessage = null;
 

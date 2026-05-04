@@ -46,10 +46,7 @@ class ImageContentView extends StatelessWidget {
       final bytes = base64Decode(image.source.bytes!);
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
-        constraints: BoxConstraints(
-          maxWidth: maxWidth,
-          maxHeight: maxHeight,
-        ),
+        constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
         child: ClipRRect(
           borderRadius: radius,
           child: Image.memory(
@@ -84,10 +81,7 @@ class ImageContentView extends StatelessWidget {
             color: theme.assistantTextColor.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 8),
-          Text(
-            image.format.toUpperCase(),
-            style: theme.captionTextStyle,
-          ),
+          Text(image.format.toUpperCase(), style: theme.captionTextStyle),
         ],
       ),
     );

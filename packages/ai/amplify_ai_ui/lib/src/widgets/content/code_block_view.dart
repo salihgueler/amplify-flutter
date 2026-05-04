@@ -48,9 +48,7 @@ class CodeBlockView extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      constraints: BoxConstraints(
-        maxHeight: maxHeight ?? double.infinity,
-      ),
+      constraints: BoxConstraints(maxHeight: maxHeight ?? double.infinity),
       decoration: BoxDecoration(
         color: theme.codeBlockColor,
         borderRadius: theme.cardBorderRadius,
@@ -60,9 +58,7 @@ class CodeBlockView extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildHeader(context, theme),
-          Flexible(
-            child: _buildCodeArea(theme),
-          ),
+          Flexible(child: _buildCodeArea(theme)),
         ],
       ),
     );
@@ -88,11 +84,7 @@ class CodeBlockView extends StatelessWidget {
               fontSize: 11,
             ),
           ),
-          if (showCopyButton)
-            _CopyButton(
-              code: code,
-              theme: theme,
-            ),
+          if (showCopyButton) _CopyButton(code: code, theme: theme),
         ],
       ),
     );

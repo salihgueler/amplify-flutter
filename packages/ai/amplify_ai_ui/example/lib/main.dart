@@ -45,9 +45,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Amplify AI UI Demo'),
-      ),
+      appBar: AppBar(title: const Text('Amplify AI UI Demo')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -57,9 +55,7 @@ class HomePage extends StatelessWidget {
             icon: Icons.chat_bubble_outline,
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => const ConversationDemoPage(),
-              ),
+              MaterialPageRoute(builder: (_) => const ConversationDemoPage()),
             ),
           ),
           const SizedBox(height: 12),
@@ -69,9 +65,7 @@ class HomePage extends StatelessWidget {
             icon: Icons.auto_awesome,
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => const GenerationDemoPage(),
-              ),
+              MaterialPageRoute(builder: (_) => const GenerationDemoPage()),
             ),
           ),
           const SizedBox(height: 12),
@@ -81,9 +75,7 @@ class HomePage extends StatelessWidget {
             icon: Icons.widgets_outlined,
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => const ComponentsGalleryPage(),
-              ),
+              MaterialPageRoute(builder: (_) => const ComponentsGalleryPage()),
             ),
           ),
         ],
@@ -224,14 +216,12 @@ class ComponentsGalleryPage extends StatelessWidget {
               statusMessage: 'Done',
             ),
             const SizedBox(height: 24),
-            Text(
-              'Code Block',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text('Code Block', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             const CodeBlockView(
               language: 'dart',
-              code: 'void main() {\n'
+              code:
+                  'void main() {\n'
                   '  print("Hello, Amplify AI!");\n'
                   '}',
               showLineNumbers: true,

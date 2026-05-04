@@ -86,7 +86,9 @@ class _StreamingTextState extends State<StreamingText>
       child: AnimatedBuilder(
         animation: _cursorAnimation,
         builder: (context, child) {
-          final cursorOpacity = widget.showCursor ? _cursorAnimation.value : 0.0;
+          final cursorOpacity = widget.showCursor
+              ? _cursorAnimation.value
+              : 0.0;
           return RichText(
             text: TextSpan(
               children: [
@@ -98,8 +100,9 @@ class _StreamingTextState extends State<StreamingText>
                   TextSpan(
                     text: widget.cursorCharacter,
                     style: textStyle.copyWith(
-                      color: theme.assistantTextColor
-                          .withValues(alpha: cursorOpacity),
+                      color: theme.assistantTextColor.withValues(
+                        alpha: cursorOpacity,
+                      ),
                     ),
                   ),
               ],

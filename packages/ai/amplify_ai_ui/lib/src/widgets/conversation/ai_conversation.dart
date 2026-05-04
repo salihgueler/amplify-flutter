@@ -1,15 +1,16 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:amplify_ai/amplify_ai.dart';
 import 'package:flutter/material.dart';
 
-import '../../providers/ai_conversation_provider.dart';
 import '../../theme/ai_theme.dart';
 import 'ai_conversation_controller.dart';
 import 'message_list.dart';
 import 'streaming_text.dart';
 import 'typing_indicator.dart';
 import '../input/ai_message_input.dart';
+import '../../providers/ai_conversation_provider.dart';
 
 /// A drop-in AI conversation widget.
 ///
@@ -18,21 +19,18 @@ import '../input/ai_message_input.dart';
 /// [AITheme] and builder callbacks.
 ///
 /// ```dart
-/// AmplifyAIConversation(
+/// AIConversation(
 ///   controller: AIConversationController(
 ///     conversationClient: aiPlugin.getConversationClient('myRoute'),
 ///   ),
 /// )
 /// ```
-class AmplifyAIConversation extends StatefulWidget {
+class AIConversation extends StatefulWidget {
   /// The controller managing conversation state.
   final AIConversationController controller;
 
   /// Optional custom message bubble builder.
-  final Widget Function(
-    BuildContext context,
-    ConversationDisplayMessage message,
-  )?
+  final Widget Function(BuildContext context, ConversationMessage message)?
   messageBubbleBuilder;
 
   /// Optional custom input widget builder.
@@ -57,7 +55,7 @@ class AmplifyAIConversation extends StatefulWidget {
   /// Padding around the message list.
   final EdgeInsets? listPadding;
 
-  const AmplifyAIConversation({
+  const AIConversation({
     super.key,
     required this.controller,
     this.messageBubbleBuilder,
@@ -70,10 +68,10 @@ class AmplifyAIConversation extends StatefulWidget {
   });
 
   @override
-  State<AmplifyAIConversation> createState() => _AmplifyAIConversationState();
+  State<AIConversation> createState() => _AIConversationState();
 }
 
-class _AmplifyAIConversationState extends State<AmplifyAIConversation> {
+class _AIConversationState extends State<AIConversation> {
   @override
   void initState() {
     super.initState();
@@ -81,7 +79,7 @@ class _AmplifyAIConversationState extends State<AmplifyAIConversation> {
   }
 
   @override
-  void didUpdateWidget(AmplifyAIConversation oldWidget) {
+  void didUpdateWidget(AIConversation oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_onControllerChanged);
@@ -154,7 +152,6 @@ class _AmplifyAIConversationState extends State<AmplifyAIConversation> {
       padding:
           widget.listPadding ??
           const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      messageBubbleBuilder: widget.messageBubbleBuilder,
     );
   }
 
@@ -186,22 +183,4 @@ class _AmplifyAIConversationState extends State<AmplifyAIConversation> {
       enabled: !widget.controller.isSending && !widget.controller.isStreaming,
     );
   }
-}
-
-/// A display-friendly representation of a conversation message for builders.
-class ConversationDisplayMessage {
-  /// The underlying message data.
-  final dynamic message;
-
-  /// Whether this is a user message.
-  final bool isUser;
-
-  /// The display text (concatenated text content blocks).
-  final String text;
-
-  const ConversationDisplayMessage({
-    required this.message,
-    required this.isUser,
-    required this.text,
-  });
 }

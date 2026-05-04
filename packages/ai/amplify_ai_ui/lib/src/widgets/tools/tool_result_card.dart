@@ -58,10 +58,7 @@ class ToolResultCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(theme, isSuccess),
-            _buildContent(theme),
-          ],
+          children: [_buildHeader(theme, isSuccess), _buildContent(theme)],
         ),
       ),
     );

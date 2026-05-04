@@ -2,3 +2,4 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export 'stream_reassembler.dart';
+export '../streaming/stream_subscription.dart';

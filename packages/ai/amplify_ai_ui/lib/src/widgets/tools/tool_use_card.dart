@@ -49,9 +49,7 @@ class ToolUseCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.toolCardColor,
           borderRadius: theme.cardBorderRadius,
-          border: Border.all(
-            color: _statusColor(theme).withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: _statusColor(theme).withValues(alpha: 0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

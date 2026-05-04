@@ -109,8 +109,8 @@ class ToolProgressIndicator extends StatelessWidget {
     final color = hasFailed
         ? theme.errorColor
         : isComplete
-            ? const Color(0xFF34A853)
-            : theme.primaryColor;
+        ? const Color(0xFF34A853)
+        : theme.primaryColor;
 
     if (progress != null) {
       return LinearProgressIndicator(

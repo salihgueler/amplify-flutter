@@ -41,9 +41,7 @@ class AttachmentButton extends StatelessWidget {
       enabled: enabled,
       icon: Icon(
         icon,
-        color: enabled
-            ? theme.primaryColor
-            : theme.sendButtonDisabledColor,
+        color: enabled ? theme.primaryColor : theme.sendButtonDisabledColor,
       ),
       onSelected: (option) {
         switch (option) {

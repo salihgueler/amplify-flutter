@@ -61,11 +61,7 @@ class SendButton extends StatelessWidget {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : Icon(
-                    icon,
-                    size: size * 0.5,
-                    color: Colors.white,
-                  ),
+                : Icon(icon, size: size * 0.5, color: Colors.white),
           ),
         ),
       ),

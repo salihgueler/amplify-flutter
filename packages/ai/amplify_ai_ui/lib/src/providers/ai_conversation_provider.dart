@@ -30,17 +30,19 @@ class AIConversationProvider extends InheritedWidget {
   ///
   /// Throws if no [AIConversationProvider] ancestor is found.
   static AIConversationController of(BuildContext context) {
-    final provider =
-        context.dependOnInheritedWidgetOfExactType<AIConversationProvider>();
-    assert(provider != null,
-        'No AIConversationProvider found in the widget tree.');
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<AIConversationProvider>();
+    assert(
+      provider != null,
+      'No AIConversationProvider found in the widget tree.',
+    );
     return provider!.controller;
   }
 
   /// Retrieves the closest [AIConversationController], or null if not found.
   static AIConversationController? maybeOf(BuildContext context) {
-    final provider =
-        context.dependOnInheritedWidgetOfExactType<AIConversationProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<AIConversationProvider>();
     return provider?.controller;
   }
 
