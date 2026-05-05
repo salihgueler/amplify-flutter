@@ -61,8 +61,6 @@ export 'src/widgets/generation/ai_generation_controller.dart';
 export 'src/widgets/common/ai_avatar.dart';
 export 'src/widgets/common/ai_loading_indicator.dart';
 export 'src/widgets/common/ai_error_view.dart';
-export 'src/widgets/common/content_block_renderer.dart';
-export 'src/widgets/common/code_block_view.dart';
 
 // Content widgets
 export 'src/widgets/content/content_block_renderer.dart';
