@@ -64,5 +64,4 @@ export 'src/widgets/common/ai_error_view.dart';
 
 // Content widgets
 export 'src/widgets/content/content_block_renderer.dart';
-export 'src/widgets/content/image_content_view.dart';
 export 'src/widgets/content/code_block_view.dart';
