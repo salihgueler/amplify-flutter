@@ -17,6 +17,7 @@ AIThemeData createDefaultAITheme(BuildContext context) {
   return AIThemeData(
     primaryColor: colorScheme.primary,
     surfaceColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+    backgroundColor: isDark ? const Color(0xFF121220) : colorScheme.surface,
     userBubbleColor: colorScheme.primary,
     assistantBubbleColor: isDark
         ? const Color(0xFF2D2D44)
@@ -24,11 +25,25 @@ AIThemeData createDefaultAITheme(BuildContext context) {
     userTextColor: colorScheme.onPrimary,
     assistantTextColor: isDark ? Colors.white : colorScheme.onSurface,
     inputBackgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+    inputFieldColor: isDark
+        ? const Color(0xFF2D2D44)
+        : colorScheme.surfaceContainerHighest,
     sendButtonColor: colorScheme.primary,
     sendButtonDisabledColor: isDark
         ? Colors.grey.shade700
         : Colors.grey.shade300,
     errorColor: colorScheme.error,
+    toolCardColor: isDark
+        ? const Color(0xFF252540)
+        : colorScheme.surfaceContainerLow,
+    toolResultCardColor: isDark
+        ? const Color(0xFF1E3A2E)
+        : colorScheme.surfaceContainerLow,
+    typingIndicatorColor: isDark
+        ? Colors.grey.shade400
+        : colorScheme.onSurfaceVariant,
+    userAvatarColor: colorScheme.primary,
+    assistantAvatarColor: colorScheme.tertiary,
     messageTextStyle: TextStyle(
       fontSize: 15,
       height: 1.4,
