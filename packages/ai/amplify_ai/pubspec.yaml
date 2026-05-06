@@ -1,9 +1,10 @@
 name: amplify_ai
-description: Amplify AI Kit client for Flutter — 1-1 mirror of JS AI Kit
+description: Amplify AI Kit — zero-boilerplate AI integration for Flutter. Auto-configures from Amplify.API.
 version: 0.1.0
 environment:
   sdk: '>=3.0.0 <4.0.0'
 dependencies:
-  amplify_core: any
+  amplify_core:
+    path: ../../amplify_core
   meta: any
   collection: any

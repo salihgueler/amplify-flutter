@@ -1,6 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:amplify_ai/amplify_ai.dart' as ai;
 import 'package:flutter/foundation.dart';
 
 import '../../providers/ai_conversation_provider.dart';
@@ -11,22 +12,18 @@ import '../../state/content_from_events.dart';
 /// Manages the conversation lifecycle including sending messages,
 /// receiving streaming responses, and handling tool-use cycles.
 ///
-/// Usage (route-name based, like JS `useAIConversation('chat')`):
+/// Usage (route-name based — zero config, like JS `useAIConversation('chat')`):
 /// ```dart
 /// final controller = AIConversationController(routeName: 'chat');
 /// ```
 ///
-/// Or with an explicit provider:
-/// ```dart
-/// final controller = AIConversationController(
-///   provider: myConversationProvider,
-/// );
-/// ```
+/// The controller automatically resolves the route from [AmplifyAI.instance].
+/// No manual wiring needed.
 class AIConversationController extends ChangeNotifier {
   /// Creates an [AIConversationController] from a route name.
   ///
   /// This mirrors the JS pattern: `useAIConversation('chat')`.
-  /// Automatically creates an [AIConversationProvider] for the route.
+  /// Automatically resolves the [ConversationRoute] from [AmplifyAI.instance].
   factory AIConversationController({
     String? routeName,
     AIConversationProvider? provider,
@@ -36,8 +33,16 @@ class AIConversationController extends ChangeNotifier {
       routeName != null || provider != null,
       'Either routeName or provider must be provided.',
     );
+
+    // If routeName is given, resolve from AmplifyAI.instance
+    ai.ConversationRoute? conversationRoute;
+    if (routeName != null && ai.AmplifyAI.instance.isConfigured) {
+      conversationRoute = ai.AmplifyAI.instance.conversation(routeName);
+    }
+
     final effectiveProvider = provider ??
         AIConversationProvider(
+          conversationRoute: conversationRoute,
           toolHandlers: toolHandlers ?? const {},
         );
     return AIConversationController._(provider: effectiveProvider);

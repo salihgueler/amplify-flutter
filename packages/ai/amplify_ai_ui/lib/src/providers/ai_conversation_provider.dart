@@ -3,6 +3,7 @@
 
 import 'dart:async';
 
+import 'package:amplify_ai/amplify_ai.dart' as ai;
 import 'package:flutter/foundation.dart';
 
 import '../state/content_from_events.dart';
@@ -59,14 +60,22 @@ class ConversationMessage {
 ///
 /// Handles sending messages, receiving streaming responses, and
 /// coordinating tool-use cycles.
+///
+/// When a [conversationRoute] is provided (resolved from [AmplifyAI.instance]),
+/// messages are sent via the real GraphQL backend. Otherwise operates in
+/// local-only mode for testing.
 class AIConversationProvider extends ChangeNotifier {
   /// Creates an [AIConversationProvider].
   AIConversationProvider({
+    this.conversationRoute,
     this.conversationId,
     this.onMessage,
     this.onError,
     this.toolHandlers = const {},
   });
+
+  /// The conversation route (resolved from AmplifyAI.instance).
+  final ai.ConversationRoute? conversationRoute;
 
   /// The conversation ID (if resuming an existing conversation).
   final String? conversationId;
@@ -100,6 +109,9 @@ class AIConversationProvider extends ChangeNotifier {
   Object? get error => _error;
   Object? _error;
 
+  /// The active conversation ID (created or resumed).
+  String? _activeConversationId;
+
   /// Content block accumulator for building streamed responses.
   final ContentBlockAccumulator _accumulator = ContentBlockAccumulator();
 
@@ -126,11 +138,13 @@ class AIConversationProvider extends ChangeNotifier {
     _accumulator.reset();
     notifyListeners();
 
-    // Simulated streaming — in real usage this connects to ConversationRoute
-    // The actual implementation would call:
-    // conversationRoute.sendMessage(text) and subscribe to the stream
     try {
-      await _processStream(text);
+      if (conversationRoute != null) {
+        await _processWithRoute(text);
+      } else {
+        // No route configured — finalize with empty response
+        _finalizeAssistantMessage();
+      }
     } catch (e) {
       _error = e;
       _isLoading = false;
@@ -140,22 +154,41 @@ class AIConversationProvider extends ChangeNotifier {
     }
   }
 
-  /// Processes a stream of events from the backend.
-  Future<void> _processStream(String userText) async {
+  /// Processes a message using the actual ConversationRoute from AmplifyAI.
+  Future<void> _processWithRoute(String userText) async {
     _isStreaming = true;
     notifyListeners();
 
-    // This is the integration point where the actual streaming
-    // subscription would be connected. The pattern mirrors the JS:
-    //
-    // subscription = conversationRoute.onStreamEvent((event) {
-    //   if (event.contentBlockDelta) handleDelta(event);
-    //   if (event.toolUse) handleToolUse(event);
-    //   if (event.stop) handleStop(event);
-    // });
-    //
-    // For now we finalize as a placeholder.
-    _finalizeAssistantMessage();
+    final route = conversationRoute!;
+
+    // Create conversation if needed
+    _activeConversationId ??= conversationId;
+    if (_activeConversationId == null) {
+      final conversation = await route.create();
+      _activeConversationId = conversation.id;
+    }
+
+    // Stream the message using the amplify_ai ContentBlock type
+    final stream = route.streamMessage(
+      conversationId: _activeConversationId!,
+      content: [ai.ContentBlock.text(userText)],
+    );
+
+    await for (final event in stream) {
+      if (event is ai.ConversationStreamTextEvent) {
+        handleTextDelta(event.text);
+      } else if (event is ai.ConversationStreamToolUseEvent) {
+        final toolUse = ToolUseContent(
+          toolUseId: event.toolUse.toolUseId,
+          name: event.toolUse.name,
+          input: event.toolUse.input,
+        );
+        await handleToolUse(toolUse);
+      } else if (event is ai.ConversationStreamTurnDoneEvent) {
+        _finalizeAssistantMessage();
+        break;
+      }
+    }
   }
 
   /// Handles a text delta event from streaming.
@@ -176,7 +209,6 @@ class AIConversationProvider extends ChangeNotifier {
         final result = await handler(toolUse);
         _accumulator.addToolResultBlock(result);
         notifyListeners();
-        // In full impl, send tool result back to continue the conversation
       } catch (e) {
         final errorResult = ToolResultContent(
           toolUseId: toolUse.toolUseId,
@@ -216,6 +248,7 @@ class AIConversationProvider extends ChangeNotifier {
     _messages.clear();
     _streamingText = '';
     _error = null;
+    _activeConversationId = null;
     notifyListeners();
   }
 
