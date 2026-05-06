@@ -5,6 +5,8 @@ import '../graphql/ai_graphql_request_factory.dart';
 
 /// Client for AI generation routes (non-conversational).
 /// Mirrors the JS AI Kit generation client pattern.
+///
+/// Generation uses a GraphQL query with the pattern `generate{RouteName}`.
 class GenerationClient {
   /// Creates a generation client.
   GenerationClient({
@@ -20,40 +22,39 @@ class GenerationClient {
 
   final AIGraphQLDocuments _documents;
 
-  /// Generates content based on the provided prompt.
+  /// Generates content based on the provided arguments.
   /// Returns the generated content as a string.
-  Future<String> generate({
-    required String prompt,
-    Map<String, dynamic>? inferenceConfiguration,
-  }) async {
+  ///
+  /// The [args] map should contain the input arguments as defined
+  /// in the schema (e.g., `{'input': 'some text'}` or `{'description': '...'}`).
+  Future<String> generate(Map<String, dynamic> args) async {
     final document = _documents.generate();
     final variables = <String, dynamic>{
-      'input': {
-        'prompt': prompt,
-        if (inferenceConfiguration != null)
-          'inferenceConfiguration': inferenceConfiguration,
-      },
+      ...args,
     };
 
-    final response = await graphqlRequestFactory.mutate(
+    final response = await graphqlRequestFactory.query(
       document: document,
       variables: variables,
     );
 
-    return response['data']?['generate'] as String? ?? '';
+    final fieldName = _documents.generateFieldName;
+    final data = response['data']?[fieldName];
+    if (data is String) {
+      return data;
+    } else if (data is Map<String, dynamic>) {
+      return data['content'] as String? ?? '';
+    }
+    return '';
   }
 
   /// Generates content and returns a stream of text chunks.
-  Stream<String> generateStream({
-    required String prompt,
-    Map<String, dynamic>? inferenceConfiguration,
-  }) {
+  Stream<String> generateStream(Map<String, dynamic> args) {
     final controller = StreamController<String>();
 
     _handleGeneration(
       controller: controller,
-      prompt: prompt,
-      inferenceConfiguration: inferenceConfiguration,
+      args: args,
     );
 
     return controller.stream;
@@ -61,14 +62,10 @@ class GenerationClient {
 
   Future<void> _handleGeneration({
     required StreamController<String> controller,
-    required String prompt,
-    Map<String, dynamic>? inferenceConfiguration,
+    required Map<String, dynamic> args,
   }) async {
     try {
-      final result = await generate(
-        prompt: prompt,
-        inferenceConfiguration: inferenceConfiguration,
-      );
+      final result = await generate(args);
       controller.add(result);
     } catch (e) {
       controller.addError(e);

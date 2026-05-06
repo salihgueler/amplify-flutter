@@ -9,9 +9,9 @@ class Conversation {
   /// Creates a conversation instance.
   const Conversation({
     required this.id,
-    required this.routeName,
     this.name,
     this.metadata,
+    this.owner,
     this.messages = const [],
     this.createdAt,
     this.updatedAt,
@@ -20,14 +20,14 @@ class Conversation {
   /// The unique identifier for this conversation.
   final String id;
 
-  /// The route name this conversation belongs to.
-  final String routeName;
-
   /// Optional display name for the conversation.
   final String? name;
 
   /// Optional metadata associated with the conversation.
   final Map<String, dynamic>? metadata;
+
+  /// The owner of this conversation.
+  final String? owner;
 
   /// The list of messages in this conversation.
   final List<ConversationMessage> messages;
@@ -41,18 +41,18 @@ class Conversation {
   /// Creates a copy of this conversation with the given fields replaced.
   Conversation copyWith({
     String? id,
-    String? routeName,
     String? name,
     Map<String, dynamic>? metadata,
+    String? owner,
     List<ConversationMessage>? messages,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return Conversation(
       id: id ?? this.id,
-      routeName: routeName ?? this.routeName,
       name: name ?? this.name,
       metadata: metadata ?? this.metadata,
+      owner: owner ?? this.owner,
       messages: messages ?? this.messages,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -62,9 +62,9 @@ class Conversation {
   /// Serializes this conversation to JSON.
   Map<String, dynamic> toJson() => {
         'id': id,
-        'routeName': routeName,
         if (name != null) 'name': name,
         if (metadata != null) 'metadata': metadata,
+        if (owner != null) 'owner': owner,
         'messages': messages.map((m) => m.toJson()).toList(),
         if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
         if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
@@ -73,10 +73,10 @@ class Conversation {
   /// Deserializes a conversation from JSON.
   factory Conversation.fromJson(Map<String, dynamic> json) {
     return Conversation(
-      id: json['id'] as String,
-      routeName: json['routeName'] as String? ?? '',
+      id: json['id'] as String? ?? '',
       name: json['name'] as String?,
       metadata: json['metadata'] as Map<String, dynamic>?,
+      owner: json['owner'] as String?,
       messages: (json['messages'] as List<dynamic>?)
               ?.map(
                 (m) => ConversationMessage.fromJson(m as Map<String, dynamic>),

@@ -1,6 +1,16 @@
 /// GraphQL document templates for AI operations.
 /// Generates the correct GraphQL queries, mutations, and subscriptions
-/// based on the conversation route name.
+/// based on the conversation route name, matching Amplify AI Kit conventions.
+///
+/// For a route named "chat", the generated operations are:
+/// - createConversationChat (mutation)
+/// - getConversationChat (query)
+/// - listConversationChats (query)
+/// - deleteConversationChat (mutation)
+/// - chat (mutation - send message / conversation handler)
+/// - listConversationMessageChats (query)
+/// - onCreateAssistantResponseChat (subscription)
+/// - generateChat (query - for generation routes)
 class AIGraphQLDocuments {
   /// Creates GraphQL documents for the given route.
   const AIGraphQLDocuments({required this.routeName});
@@ -11,14 +21,49 @@ class AIGraphQLDocuments {
   String get _capitalizedRouteName =>
       routeName[0].toUpperCase() + routeName.substring(1);
 
+  // --- Operation name getters (useful for response parsing) ---
+
+  /// The GraphQL field name for creating a conversation.
+  String get createConversationFieldName =>
+      'createConversation$_capitalizedRouteName';
+
+  /// The GraphQL field name for getting a conversation.
+  String get getConversationFieldName =>
+      'getConversation$_capitalizedRouteName';
+
+  /// The GraphQL field name for listing conversations.
+  String get listConversationsFieldName =>
+      'listConversation${_capitalizedRouteName}s';
+
+  /// The GraphQL field name for deleting a conversation.
+  String get deleteConversationFieldName =>
+      'deleteConversation$_capitalizedRouteName';
+
+  /// The GraphQL field name for sending a message (conversation handler).
+  String get sendMessageFieldName => routeName;
+
+  /// The GraphQL field name for listing messages.
+  String get listMessagesFieldName =>
+      'listConversationMessage${_capitalizedRouteName}s';
+
+  /// The GraphQL field name for the assistant response subscription.
+  String get onAssistantResponseFieldName =>
+      'onCreateAssistantResponse$_capitalizedRouteName';
+
+  /// The GraphQL field name for generation.
+  String get generateFieldName => 'generate$_capitalizedRouteName';
+
+  // --- GraphQL document builders ---
+
   /// Creates a GraphQL mutation to create a new conversation.
   String createConversation() {
     return '''
-      mutation Create$_capitalizedRouteName(\$input: Create${_capitalizedRouteName}Input!) {
-        create$_capitalizedRouteName(input: \$input) {
+      mutation CreateConversation$_capitalizedRouteName(\$input: CreateConversation${_capitalizedRouteName}Input!) {
+        createConversation$_capitalizedRouteName(input: \$input) {
           id
           name
           metadata
+          owner
           createdAt
           updatedAt
         }
@@ -29,23 +74,12 @@ class AIGraphQLDocuments {
   /// Creates a GraphQL query to get a conversation by ID.
   String getConversation() {
     return '''
-      query Get$_capitalizedRouteName(\$id: ID!) {
-        get$_capitalizedRouteName(id: \$id) {
+      query GetConversation$_capitalizedRouteName(\$id: ID!) {
+        getConversation$_capitalizedRouteName(id: \$id) {
           id
           name
           metadata
-          messages {
-            items {
-              id
-              conversationId
-              role
-              content
-              associatedUserMessageId
-              aiContext
-              createdAt
-              updatedAt
-            }
-          }
+          owner
           createdAt
           updatedAt
         }
@@ -56,12 +90,13 @@ class AIGraphQLDocuments {
   /// Creates a GraphQL query to list conversations.
   String listConversations() {
     return '''
-      query List${_capitalizedRouteName}s(\$limit: Int, \$nextToken: String) {
-        list${_capitalizedRouteName}s(limit: \$limit, nextToken: \$nextToken) {
+      query ListConversation${_capitalizedRouteName}s(\$filter: ModelConversation${_capitalizedRouteName}FilterInput, \$limit: Int, \$nextToken: String) {
+        listConversation${_capitalizedRouteName}s(filter: \$filter, limit: \$limit, nextToken: \$nextToken) {
           items {
             id
             name
             metadata
+            owner
             createdAt
             updatedAt
           }
@@ -74,49 +109,111 @@ class AIGraphQLDocuments {
   /// Creates a GraphQL mutation to delete a conversation.
   String deleteConversation() {
     return '''
-      mutation Delete$_capitalizedRouteName(\$input: Delete${_capitalizedRouteName}Input!) {
-        delete$_capitalizedRouteName(input: \$input) {
+      mutation DeleteConversation$_capitalizedRouteName(\$input: DeleteConversation${_capitalizedRouteName}Input!) {
+        deleteConversation$_capitalizedRouteName(input: \$input) {
           id
         }
       }
     ''';
   }
 
-  /// Creates a GraphQL mutation to send a message.
+  /// Creates a GraphQL mutation to send a message (conversation handler).
+  /// This is the primary mutation that triggers the AI model.
+  /// The mutation field name is the route name itself (e.g., "chat", "pirateChat").
   String sendMessage() {
-    final messageModelName = '${_capitalizedRouteName}Message';
     return '''
-      mutation Send$messageModelName(\$input: Create${messageModelName}Input!) {
-        create$messageModelName(input: \$input) {
-          id
-          conversationId
-          role
-          content
-          associatedUserMessageId
+      mutation $_capitalizedRouteName(\$aiContext: AWSJSON, \$content: [AmplifyAIContentBlockInput], \$conversationId: ID!, \$toolConfiguration: AmplifyAIToolConfigurationInput) {
+        $routeName(aiContext: \$aiContext, content: \$content, conversationId: \$conversationId, toolConfiguration: \$toolConfiguration) {
           aiContext
+          associatedUserMessageId
+          content {
+            text
+            toolResult {
+              status
+              content {
+                document {
+                  format
+                  name
+                  source {
+                    bytes
+                  }
+                }
+                image {
+                  format
+                  source {
+                    bytes
+                  }
+                }
+                json
+                text
+              }
+              toolUseId
+            }
+            toolUse {
+              input
+              name
+              toolUseId
+            }
+            image {
+              format
+              source {
+                bytes
+              }
+            }
+            document {
+              format
+              name
+              source {
+                bytes
+              }
+            }
+          }
+          conversationId
           createdAt
+          id
+          owner
+          role
+          toolConfiguration {
+            tools {
+              toolSpec {
+                description
+                inputSchema {
+                  json
+                }
+                name
+              }
+            }
+          }
           updatedAt
         }
       }
     ''';
   }
 
-  /// Creates a GraphQL subscription for stream events.
+  /// Creates a GraphQL subscription for assistant response streaming.
+  /// Subscribes to `onCreateAssistantResponse{RouteName}`.
   String onStreamEvent() {
-    final messageModelName = '${_capitalizedRouteName}Message';
     return '''
-      subscription OnCreate${messageModelName}Stream(\$conversationId: ID!) {
-        onCreate${messageModelName}Stream(conversationId: \$conversationId) {
+      subscription OnCreateAssistantResponse$_capitalizedRouteName(\$conversationId: ID) {
+        onCreateAssistantResponse$_capitalizedRouteName(conversationId: \$conversationId) {
           id
           conversationId
           associatedUserMessageId
           contentBlockIndex
           contentBlockDeltaIndex
           contentBlockText
-          contentBlockToolUse
+          contentBlockToolUse {
+            input
+            name
+            toolUseId
+          }
           contentBlockDoneAtIndex
           stopReason
-          message
+          errors {
+            errorType
+            message
+          }
+          owner
         }
       }
     ''';
@@ -124,21 +221,57 @@ class AIGraphQLDocuments {
 
   /// Creates a GraphQL query to list messages for a conversation.
   String listMessages() {
-    final messageModelName = '${_capitalizedRouteName}Message';
     return '''
-      query List${messageModelName}s(\$conversationId: ID!, \$limit: Int, \$nextToken: String) {
-        list${messageModelName}s(
-          filter: { conversationId: { eq: \$conversationId } }
-          limit: \$limit
-          nextToken: \$nextToken
-        ) {
+      query ListConversationMessage${_capitalizedRouteName}s(\$filter: ModelConversationMessage${_capitalizedRouteName}FilterInput, \$limit: Int, \$nextToken: String) {
+        listConversationMessage${_capitalizedRouteName}s(filter: \$filter, limit: \$limit, nextToken: \$nextToken) {
           items {
             id
             conversationId
             role
-            content
+            content {
+              text
+              toolResult {
+                status
+                content {
+                  document {
+                    format
+                    name
+                    source {
+                      bytes
+                    }
+                  }
+                  image {
+                    format
+                    source {
+                      bytes
+                    }
+                  }
+                  json
+                  text
+                }
+                toolUseId
+              }
+              toolUse {
+                input
+                name
+                toolUseId
+              }
+              image {
+                format
+                source {
+                  bytes
+                }
+              }
+              document {
+                format
+                name
+                source {
+                  bytes
+                }
+              }
+            }
             associatedUserMessageId
-            aiContext
+            owner
             createdAt
             updatedAt
           }
@@ -148,19 +281,12 @@ class AIGraphQLDocuments {
     ''';
   }
 
-  /// Creates a GraphQL mutation for generation.
+  /// Creates a GraphQL query for generation routes.
+  /// The field name is `generate{RouteName}` (e.g., `generateSummarize`).
   String generate() {
     return '''
-      mutation Generate$_capitalizedRouteName(\$input: Generate${_capitalizedRouteName}Input!) {
-        generate$_capitalizedRouteName(input: \$input) {
-          content
-          stopReason
-          usage {
-            inputTokens
-            outputTokens
-            totalTokens
-          }
-        }
+      query Generate$_capitalizedRouteName(\$input: String) {
+        generate$_capitalizedRouteName(input: \$input)
       }
     ''';
   }

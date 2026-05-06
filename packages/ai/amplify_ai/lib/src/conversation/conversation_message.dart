@@ -23,6 +23,7 @@ class ConversationMessage {
     required this.content,
     this.associatedUserMessageId,
     this.aiContext,
+    this.owner,
     this.createdAt,
     this.updatedAt,
   });
@@ -45,6 +46,9 @@ class ConversationMessage {
   /// Additional AI context for the message.
   final Map<String, dynamic>? aiContext;
 
+  /// The owner of this message.
+  final String? owner;
+
   /// The timestamp when this message was created.
   final DateTime? createdAt;
 
@@ -59,6 +63,7 @@ class ConversationMessage {
     List<ContentBlock>? content,
     String? associatedUserMessageId,
     Map<String, dynamic>? aiContext,
+    String? owner,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -70,6 +75,7 @@ class ConversationMessage {
       associatedUserMessageId:
           associatedUserMessageId ?? this.associatedUserMessageId,
       aiContext: aiContext ?? this.aiContext,
+      owner: owner ?? this.owner,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -84,24 +90,34 @@ class ConversationMessage {
         if (associatedUserMessageId != null)
           'associatedUserMessageId': associatedUserMessageId,
         if (aiContext != null) 'aiContext': aiContext,
+        if (owner != null) 'owner': owner,
         if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
         if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
       };
 
   /// Deserializes a message from JSON.
   factory ConversationMessage.fromJson(Map<String, dynamic> json) {
+    final contentJson = json['content'];
+    List<ContentBlock> content;
+    if (contentJson is List) {
+      content = contentJson
+          .map((c) => ContentBlock.fromJson(c as Map<String, dynamic>))
+          .toList();
+    } else {
+      content = [];
+    }
+
     return ConversationMessage(
-      id: json['id'] as String,
-      conversationId: json['conversationId'] as String,
+      id: json['id'] as String? ?? '',
+      conversationId: json['conversationId'] as String? ?? '',
       role: ConversationMessageRole.values.firstWhere(
-        (r) => r.name == (json['role'] as String).toLowerCase(),
+        (r) => r.name == (json['role'] as String? ?? 'user').toLowerCase(),
         orElse: () => ConversationMessageRole.user,
       ),
-      content: (json['content'] as List<dynamic>)
-          .map((c) => ContentBlock.fromJson(c as Map<String, dynamic>))
-          .toList(),
+      content: content,
       associatedUserMessageId: json['associatedUserMessageId'] as String?,
       aiContext: json['aiContext'] as Map<String, dynamic>?,
+      owner: json['owner'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,

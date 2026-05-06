@@ -54,8 +54,9 @@ class ConversationRoute {
       variables: variables,
     );
 
+    final fieldName = _documents.createConversationFieldName;
     return Conversation.fromJson(
-      response['data']?['createConversation'] as Map<String, dynamic>? ?? {},
+      response['data']?[fieldName] as Map<String, dynamic>? ?? {},
     );
   }
 
@@ -71,8 +72,9 @@ class ConversationRoute {
       variables: variables,
     );
 
+    final fieldName = _documents.getConversationFieldName;
     return Conversation.fromJson(
-      response['data']?['getConversation'] as Map<String, dynamic>? ?? {},
+      response['data']?[fieldName] as Map<String, dynamic>? ?? {},
     );
   }
 
@@ -92,9 +94,9 @@ class ConversationRoute {
       variables: variables,
     );
 
+    final fieldName = _documents.listConversationsFieldName;
     final items =
-        response['data']?['listConversations']?['items'] as List<dynamic>? ??
-            [];
+        response['data']?[fieldName]?['items'] as List<dynamic>? ?? [];
     return items
         .map((item) => Conversation.fromJson(item as Map<String, dynamic>))
         .toList();
@@ -114,6 +116,7 @@ class ConversationRoute {
   }
 
   /// Sends a message to a conversation and returns the assistant's response.
+  /// Uses the conversation handler mutation (field name = route name).
   Future<ConversationMessage> sendMessage({
     required String conversationId,
     required List<ContentBlock> content,
@@ -123,13 +126,11 @@ class ConversationRoute {
     final effectiveToolConfig = toolConfiguration ?? this.toolConfiguration;
     final document = _documents.sendMessage();
     final variables = <String, dynamic>{
-      'input': {
-        'conversationId': conversationId,
-        'content': content.map((c) => c.toJson()).toList(),
-        if (aiContext != null) 'aiContext': aiContext,
-        if (effectiveToolConfig != null)
-          'toolConfiguration': effectiveToolConfig.toJson(),
-      },
+      'conversationId': conversationId,
+      'content': content.map((c) => c.toJson()).toList(),
+      if (aiContext != null) 'aiContext': aiContext,
+      if (effectiveToolConfig != null)
+        'toolConfiguration': effectiveToolConfig.toJson(),
     };
 
     final response = await graphqlRequestFactory.mutate(
@@ -137,8 +138,9 @@ class ConversationRoute {
       variables: variables,
     );
 
+    final fieldName = _documents.sendMessageFieldName;
     final messageData =
-        response['data']?['sendMessage'] as Map<String, dynamic>? ?? {};
+        response['data']?[fieldName] as Map<String, dynamic>? ?? {};
     return ConversationMessage.fromJson(messageData);
   }
 
@@ -154,13 +156,11 @@ class ConversationRoute {
     final subscriptionDocument = _documents.onStreamEvent();
 
     final variables = <String, dynamic>{
-      'input': {
-        'conversationId': conversationId,
-        'content': content.map((c) => c.toJson()).toList(),
-        if (aiContext != null) 'aiContext': aiContext,
-        if (effectiveToolConfig != null)
-          'toolConfiguration': effectiveToolConfig.toJson(),
-      },
+      'conversationId': conversationId,
+      'content': content.map((c) => c.toJson()).toList(),
+      if (aiContext != null) 'aiContext': aiContext,
+      if (effectiveToolConfig != null)
+        'toolConfiguration': effectiveToolConfig.toJson(),
     };
 
     final controller = StreamController<ConversationStreamEvent>();
@@ -184,7 +184,7 @@ class ConversationRoute {
     required String conversationId,
   }) async {
     try {
-      // Subscribe to stream events
+      // Subscribe to stream events first
       final subscription = subscriptionHandler.subscribe(
         document: subscriptionDocument,
         variables: {'conversationId': conversationId},
@@ -198,7 +198,10 @@ class ConversationRoute {
 
       // Forward subscription events
       await for (final event in subscription) {
-        final streamEvent = ConversationStreamEvent.fromJson(event);
+        // The subscription data is nested under the operation name
+        final fieldName = _documents.onAssistantResponseFieldName;
+        final eventData = event[fieldName] as Map<String, dynamic>? ?? event;
+        final streamEvent = ConversationStreamEvent.fromJson(eventData);
         controller.add(streamEvent);
 
         // Handle tool use if handler is registered
@@ -261,7 +264,9 @@ class ConversationRoute {
   }) async {
     final document = _documents.listMessages();
     final variables = <String, dynamic>{
-      'conversationId': conversationId,
+      'filter': {
+        'conversationId': {'eq': conversationId},
+      },
       if (limit != null) 'limit': limit,
       if (nextToken != null) 'nextToken': nextToken,
     };
@@ -271,8 +276,9 @@ class ConversationRoute {
       variables: variables,
     );
 
+    final fieldName = _documents.listMessagesFieldName;
     final items =
-        response['data']?['listMessages']?['items'] as List<dynamic>? ?? [];
+        response['data']?[fieldName]?['items'] as List<dynamic>? ?? [];
     return items
         .map((item) =>
             ConversationMessage.fromJson(item as Map<String, dynamic>))

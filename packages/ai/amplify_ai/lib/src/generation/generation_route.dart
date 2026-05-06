@@ -5,6 +5,9 @@ import '../graphql/ai_graphql_request_factory.dart';
 
 /// A route for AI generation (non-conversational, single prompt/response).
 /// Mirrors the JS AI Kit generation route pattern.
+///
+/// Generation routes use a GraphQL **query** (not mutation) with the pattern:
+/// `generate{RouteName}` (e.g., `generateSummarize`, `generateRecipe`).
 class GenerationRoute {
   /// Creates a generation route.
   GenerationRoute({
@@ -22,39 +25,43 @@ class GenerationRoute {
 
   /// Generates content based on a prompt.
   /// Returns the generated content as a structured response.
-  Future<GenerationResponse> generate({
-    required String prompt,
-    Map<String, dynamic>? inferenceConfiguration,
-  }) async {
+  ///
+  /// The generation route sends a GraphQL query with the arguments
+  /// defined in the schema (e.g., `description`, `input`, etc.).
+  Future<GenerationResponse> generate(
+    Map<String, dynamic> args,
+  ) async {
     final document = _documents.generate();
     final variables = <String, dynamic>{
-      'input': {
-        'prompt': prompt,
-        if (inferenceConfiguration != null)
-          'inferenceConfiguration': inferenceConfiguration,
-      },
+      ...args,
     };
 
-    final response = await graphqlRequestFactory.mutate(
+    final response = await graphqlRequestFactory.query(
       document: document,
       variables: variables,
     );
 
-    final data = response['data']?['generate'] as Map<String, dynamic>? ?? {};
-    return GenerationResponse.fromJson(data);
+    final fieldName = _documents.generateFieldName;
+    final data = response['data']?[fieldName];
+
+    // Generation can return either a String or a Map depending on the schema
+    if (data is String) {
+      return GenerationResponse(content: data);
+    } else if (data is Map<String, dynamic>) {
+      return GenerationResponse.fromJson(data);
+    }
+    return const GenerationResponse();
   }
 
   /// Generates content and returns a stream of text chunks.
-  Stream<String> generateStream({
-    required String prompt,
-    Map<String, dynamic>? inferenceConfiguration,
-  }) {
+  Stream<String> generateStream(
+    Map<String, dynamic> args,
+  ) {
     final controller = StreamController<String>();
 
     _handleGeneration(
       controller: controller,
-      prompt: prompt,
-      inferenceConfiguration: inferenceConfiguration,
+      args: args,
     );
 
     return controller.stream;
@@ -62,14 +69,10 @@ class GenerationRoute {
 
   Future<void> _handleGeneration({
     required StreamController<String> controller,
-    required String prompt,
-    Map<String, dynamic>? inferenceConfiguration,
+    required Map<String, dynamic> args,
   }) async {
     try {
-      final result = await generate(
-        prompt: prompt,
-        inferenceConfiguration: inferenceConfiguration,
-      );
+      final result = await generate(args);
       if (result.content != null) {
         controller.add(result.content!);
       }
