@@ -5,10 +5,7 @@ import 'package:meta/meta.dart';
 @immutable
 class ToolConfiguration {
   /// Creates a tool configuration.
-  const ToolConfiguration({
-    required this.tools,
-    this.toolChoice,
-  });
+  const ToolConfiguration({required this.tools, this.toolChoice});
 
   /// The list of tools available for the model to use.
   final List<ToolSpec> tools;
@@ -19,9 +16,9 @@ class ToolConfiguration {
 
   /// Serializes this configuration to JSON.
   Map<String, dynamic> toJson() => {
-        'tools': tools.map((t) => t.toJson()).toList(),
-        if (toolChoice != null) 'toolChoice': toolChoice!.toJson(),
-      };
+    'tools': tools.map((t) => t.toJson()).toList(),
+    if (toolChoice != null) 'toolChoice': toolChoice!.toJson(),
+  };
 
   /// Deserializes a tool configuration from JSON.
   factory ToolConfiguration.fromJson(Map<String, dynamic> json) {
@@ -31,8 +28,9 @@ class ToolConfiguration {
     final toolChoiceJson = json['toolChoice'] as Map<String, dynamic>?;
     return ToolConfiguration(
       tools: toolsList,
-      toolChoice:
-          toolChoiceJson != null ? ToolChoice.fromJson(toolChoiceJson) : null,
+      toolChoice: toolChoiceJson != null
+          ? ToolChoice.fromJson(toolChoiceJson)
+          : null,
     );
   }
 }
@@ -58,14 +56,12 @@ class ToolSpec {
 
   /// Serializes this tool spec to JSON.
   Map<String, dynamic> toJson() => {
-        'toolSpec': {
-          'name': name,
-          'description': description,
-          'inputSchema': {
-            'json': inputSchema,
-          },
-        },
-      };
+    'toolSpec': {
+      'name': name,
+      'description': description,
+      'inputSchema': {'json': inputSchema},
+    },
+  };
 
   /// Deserializes a tool spec from JSON.
   factory ToolSpec.fromJson(Map<String, dynamic> json) {
@@ -75,7 +71,8 @@ class ToolSpec {
     return ToolSpec(
       name: spec['name'] as String,
       description: spec['description'] as String,
-      inputSchema: inputSchemaWrapper['json'] as Map<String, dynamic>? ??
+      inputSchema:
+          inputSchemaWrapper['json'] as Map<String, dynamic>? ??
           inputSchemaWrapper,
     );
   }

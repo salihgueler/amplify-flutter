@@ -29,7 +29,8 @@ class ConversationRoute {
   /// The name of this conversation route from the AI config.
   final String routeName;
 
-  /// Optional tool configuration for this route.
+  /// Optional default tool configuration for this route.
+  /// Can be overridden per-message in [sendMessage].
   final ToolConfiguration? toolConfiguration;
 
   /// Optional tool handler for processing tool use requests.
@@ -43,15 +44,15 @@ class ConversationRoute {
     final request = GraphQLRequest<String>(
       document: document,
       variables: {
-        'input': {
-          if (name != null) 'name': name,
-        },
+        'input': {if (name != null) 'name': name},
       },
     );
 
     final response = await Amplify.API.mutate(request: request).response;
     if (response.errors.isNotEmpty) {
-      throw Exception('GraphQL errors: ${response.errors.map((e) => e.message).join(', ')}');
+      throw Exception(
+        'GraphQL errors: ${response.errors.map((e) => e.message).join(', ')}',
+      );
     }
 
     final data = response.data != null
@@ -72,16 +73,18 @@ class ConversationRoute {
 
     final response = await Amplify.API.query(request: request).response;
     if (response.errors.isNotEmpty) {
-      throw Exception('GraphQL errors: ${response.errors.map((e) => e.message).join(', ')}');
+      throw Exception(
+        'GraphQL errors: ${response.errors.map((e) => e.message).join(', ')}',
+      );
     }
 
     final data = response.data != null
         ? jsonDecode(response.data!) as Map<String, dynamic>
         : <String, dynamic>{};
     final fieldName = _documents.listConversationsFieldName;
-    final items = (data['data']?[fieldName]?['items'] ??
-        data[fieldName]?['items'] ??
-        []) as List;
+    final items =
+        (data['data']?[fieldName]?['items'] ?? data[fieldName]?['items'] ?? [])
+            as List;
     return items
         .map((item) => Conversation.fromJson(item as Map<String, dynamic>))
         .toList();
@@ -97,7 +100,9 @@ class ConversationRoute {
 
     final response = await Amplify.API.query(request: request).response;
     if (response.errors.isNotEmpty) {
-      throw Exception('GraphQL errors: ${response.errors.map((e) => e.message).join(', ')}');
+      throw Exception(
+        'GraphQL errors: ${response.errors.map((e) => e.message).join(', ')}',
+      );
     }
 
     final data = response.data != null
@@ -116,12 +121,16 @@ class ConversationRoute {
     final document = _documents.deleteConversation();
     final request = GraphQLRequest<String>(
       document: document,
-      variables: {'input': {'id': conversationId}},
+      variables: {
+        'input': {'id': conversationId},
+      },
     );
 
     final response = await Amplify.API.mutate(request: request).response;
     if (response.errors.isNotEmpty) {
-      throw Exception('GraphQL errors: ${response.errors.map((e) => e.message).join(', ')}');
+      throw Exception(
+        'GraphQL errors: ${response.errors.map((e) => e.message).join(', ')}',
+      );
     }
   }
 
@@ -131,39 +140,51 @@ class ConversationRoute {
     final request = GraphQLRequest<String>(
       document: document,
       variables: {
-        'filter': {'conversationId': {'eq': conversationId}},
+        'filter': {
+          'conversationId': {'eq': conversationId},
+        },
       },
     );
 
     final response = await Amplify.API.query(request: request).response;
     if (response.errors.isNotEmpty) {
-      throw Exception('GraphQL errors: ${response.errors.map((e) => e.message).join(', ')}');
+      throw Exception(
+        'GraphQL errors: ${response.errors.map((e) => e.message).join(', ')}',
+      );
     }
 
     final data = response.data != null
         ? jsonDecode(response.data!) as Map<String, dynamic>
         : <String, dynamic>{};
     final fieldName = _documents.listMessagesFieldName;
-    final items = (data['data']?[fieldName]?['items'] ??
-        data[fieldName]?['items'] ??
-        []) as List;
+    final items =
+        (data['data']?[fieldName]?['items'] ?? data[fieldName]?['items'] ?? [])
+            as List;
     return items
-        .map((item) => ConversationMessage.fromJson(item as Map<String, dynamic>))
+        .map(
+          (item) => ConversationMessage.fromJson(item as Map<String, dynamic>),
+        )
         .toList();
   }
 
   /// Sends a message and returns a stream of response events.
+  ///
+  /// The [toolConfiguration] parameter allows passing tool configuration
+  /// with the message. If not provided, uses the route-level toolConfiguration.
+  /// The [aiContext] parameter allows passing additional AI context as JSON.
   Stream<ConversationStreamEvent> sendMessage({
     required String conversationId,
     required List<ContentBlock> content,
-    List<ContentBlock>? toolResult,
+    ToolConfiguration? toolConfiguration,
+    Map<String, dynamic>? aiContext,
   }) {
     final controller = StreamController<ConversationStreamEvent>();
 
     _sendAndStream(
       conversationId: conversationId,
       content: content,
-      toolResult: toolResult,
+      toolConfiguration: toolConfiguration ?? this.toolConfiguration,
+      aiContext: aiContext,
       controller: controller,
     );
 
@@ -173,7 +194,8 @@ class ConversationRoute {
   Future<void> _sendAndStream({
     required String conversationId,
     required List<ContentBlock> content,
-    List<ContentBlock>? toolResult,
+    ToolConfiguration? toolConfiguration,
+    Map<String, dynamic>? aiContext,
     required StreamController<ConversationStreamEvent> controller,
   }) async {
     try {
@@ -191,17 +213,16 @@ class ConversationRoute {
         },
       );
 
-      // Send the message
+      // Send the message - variables are passed directly (not wrapped in "input")
       final mutationDoc = _documents.sendMessage();
       final mutationRequest = GraphQLRequest<String>(
         document: mutationDoc,
         variables: {
-          'input': {
-            'conversationId': conversationId,
-            'content': content.map((c) => c.toJson()).toList(),
-            if (toolResult != null)
-              'toolResult': toolResult.map((c) => c.toJson()).toList(),
-          },
+          'conversationId': conversationId,
+          'content': content.map((c) => c.toJson()).toList(),
+          if (aiContext != null) 'aiContext': jsonEncode(aiContext),
+          if (toolConfiguration != null)
+            'toolConfiguration': toolConfiguration.toJson(),
         },
       );
 

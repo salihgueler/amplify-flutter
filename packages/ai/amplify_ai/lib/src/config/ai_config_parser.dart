@@ -68,8 +68,9 @@ class AIConfigParser {
   ) {
     final routes = parse(config);
     return Map.fromEntries(
-      routes.entries
-          .where((e) => e.value.routeType == AIRouteType.conversation),
+      routes.entries.where(
+        (e) => e.value.routeType == AIRouteType.conversation,
+      ),
     );
   }
 

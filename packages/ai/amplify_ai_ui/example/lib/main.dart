@@ -202,13 +202,9 @@ class ComponentsGalleryPage extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const ToolProgressIndicator(
-              toolName: 'searchDatabase',
-            ),
+            const ToolProgressIndicator(toolName: 'searchDatabase'),
             const SizedBox(height: 16),
-            const ToolProgressIndicator(
-              toolName: 'fetchWeather',
-            ),
+            const ToolProgressIndicator(toolName: 'fetchWeather'),
             const SizedBox(height: 24),
             Text('Code Block', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),

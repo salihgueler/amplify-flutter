@@ -61,14 +61,14 @@ class Conversation {
 
   /// Serializes this conversation to JSON.
   Map<String, dynamic> toJson() => {
-        'id': id,
-        if (name != null) 'name': name,
-        if (metadata != null) 'metadata': metadata,
-        if (owner != null) 'owner': owner,
-        'messages': messages.map((m) => m.toJson()).toList(),
-        if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
-        if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
-      };
+    'id': id,
+    if (name != null) 'name': name,
+    if (metadata != null) 'metadata': metadata,
+    if (owner != null) 'owner': owner,
+    'messages': messages.map((m) => m.toJson()).toList(),
+    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+    if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+  };
 
   /// Deserializes a conversation from JSON.
   factory Conversation.fromJson(Map<String, dynamic> json) {
@@ -77,7 +77,8 @@ class Conversation {
       name: json['name'] as String?,
       metadata: json['metadata'] as Map<String, dynamic>?,
       owner: json['owner'] as String?,
-      messages: (json['messages'] as List<dynamic>?)
+      messages:
+          (json['messages'] as List<dynamic>?)
               ?.map(
                 (m) => ConversationMessage.fromJson(m as Map<String, dynamic>),
               )

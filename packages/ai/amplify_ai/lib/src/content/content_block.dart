@@ -1,7 +1,12 @@
 import 'package:meta/meta.dart';
 
 /// Sealed class representing content blocks in AI messages.
-/// Mirrors the JS AI Kit ContentBlock type exactly.
+/// Matches the AmplifyAIContentBlockInput type from the schema:
+/// - text: String
+/// - document: AmplifyAIDocumentBlockInput
+/// - image: AmplifyAIImageBlockInput
+/// - toolResult: AmplifyAIToolResultBlockInput
+/// - toolUse: AmplifyAIToolUseBlockInput
 @immutable
 sealed class ContentBlock {
   const ContentBlock();
@@ -10,10 +15,15 @@ sealed class ContentBlock {
   factory ContentBlock.text(String text) = TextContentBlock;
 
   /// Creates an image content block.
-  factory ContentBlock.image({
+  factory ContentBlock.image({required String format, required String source}) =
+      ImageContentBlock;
+
+  /// Creates a document content block.
+  factory ContentBlock.document({
     required String format,
+    required String name,
     required String source,
-  }) = ImageContentBlock;
+  }) = DocumentContentBlock;
 
   /// Creates a tool use content block.
   factory ContentBlock.toolUse({
@@ -25,7 +35,7 @@ sealed class ContentBlock {
   /// Creates a tool result content block.
   factory ContentBlock.toolResult({
     required String toolUseId,
-    required Map<String, dynamic> content,
+    required List<ToolResultContent> content,
     String? status,
   }) = ToolResultContentBlock;
 
@@ -43,18 +53,31 @@ sealed class ContentBlock {
         format: image['format'] as String,
         source: source['bytes'] as String,
       );
+    } else if (json.containsKey('document')) {
+      final document = json['document'] as Map<String, dynamic>;
+      final source = document['source'] as Map<String, dynamic>;
+      return DocumentContentBlock(
+        format: document['format'] as String,
+        name: document['name'] as String,
+        source: source['bytes'] as String,
+      );
     } else if (json.containsKey('toolUse')) {
       final toolUse = json['toolUse'] as Map<String, dynamic>;
       return ToolUseContentBlock(
         toolUseId: toolUse['toolUseId'] as String,
         name: toolUse['name'] as String,
-        input: toolUse['input'] as Map<String, dynamic>,
+        input: toolUse['input'] is Map<String, dynamic>
+            ? toolUse['input'] as Map<String, dynamic>
+            : {},
       );
     } else if (json.containsKey('toolResult')) {
       final toolResult = json['toolResult'] as Map<String, dynamic>;
+      final contentList = toolResult['content'] as List<dynamic>? ?? [];
       return ToolResultContentBlock(
         toolUseId: toolResult['toolUseId'] as String,
-        content: toolResult['content'] as Map<String, dynamic>,
+        content: contentList
+            .map((c) => ToolResultContent.fromJson(c as Map<String, dynamic>))
+            .toList(),
         status: toolResult['status'] as String?,
       );
     }
@@ -88,14 +111,12 @@ class TextContentBlock extends ContentBlock {
   String toString() => 'TextContentBlock(text: $text)';
 }
 
-/// An image content block.
+/// An image content block matching AmplifyAIImageBlockInput.
+/// Schema: { format: String, source: { bytes: String } }
 @immutable
 class ImageContentBlock extends ContentBlock {
   /// Creates an image content block.
-  const ImageContentBlock({
-    required this.format,
-    required this.source,
-  });
+  const ImageContentBlock({required this.format, required this.source});
 
   /// The image format (e.g., 'png', 'jpeg', 'gif', 'webp').
   final String format;
@@ -105,11 +126,11 @@ class ImageContentBlock extends ContentBlock {
 
   @override
   Map<String, dynamic> toJson() => {
-        'image': {
-          'format': format,
-          'source': {'bytes': source},
-        },
-      };
+    'image': {
+      'format': format,
+      'source': {'bytes': source},
+    },
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -126,7 +147,53 @@ class ImageContentBlock extends ContentBlock {
   String toString() => 'ImageContentBlock(format: $format)';
 }
 
+/// A document content block matching AmplifyAIDocumentBlockInput.
+/// Schema: { format: String, name: String, source: { bytes: String } }
+@immutable
+class DocumentContentBlock extends ContentBlock {
+  /// Creates a document content block.
+  const DocumentContentBlock({
+    required this.format,
+    required this.name,
+    required this.source,
+  });
+
+  /// The document format (e.g., 'pdf', 'txt', 'md').
+  final String format;
+
+  /// The document name.
+  final String name;
+
+  /// The base64-encoded document data.
+  final String source;
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'document': {
+      'format': format,
+      'name': name,
+      'source': {'bytes': source},
+    },
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DocumentContentBlock &&
+          runtimeType == other.runtimeType &&
+          format == other.format &&
+          name == other.name &&
+          source == other.source;
+
+  @override
+  int get hashCode => Object.hash(format, name, source);
+
+  @override
+  String toString() => 'DocumentContentBlock(name: $name, format: $format)';
+}
+
 /// A tool use content block — the model is requesting tool execution.
+/// Matches AmplifyAIToolUseBlockInput: { toolUseId: String, name: String, input: AWSJSON }
 @immutable
 class ToolUseContentBlock extends ContentBlock {
   /// Creates a tool use content block.
@@ -147,12 +214,8 @@ class ToolUseContentBlock extends ContentBlock {
 
   @override
   Map<String, dynamic> toJson() => {
-        'toolUse': {
-          'toolUseId': toolUseId,
-          'name': name,
-          'input': input,
-        },
-      };
+    'toolUse': {'toolUseId': toolUseId, 'name': name, 'input': input},
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -170,6 +233,10 @@ class ToolUseContentBlock extends ContentBlock {
 }
 
 /// A tool result content block — the result of a tool execution.
+/// Matches AmplifyAIToolResultBlockInput:
+/// { toolUseId: String, status: String, content: [AmplifyAIToolResultContentBlockInput] }
+///
+/// Each content item in the array can have: text, json, image, document.
 @immutable
 class ToolResultContentBlock extends ContentBlock {
   /// Creates a tool result content block.
@@ -183,19 +250,20 @@ class ToolResultContentBlock extends ContentBlock {
   final String toolUseId;
 
   /// The content/result from executing the tool.
-  final Map<String, dynamic> content;
+  /// Each item can contain text, json, image, or document.
+  final List<ToolResultContent> content;
 
   /// The status of the tool execution (e.g., 'success', 'error').
   final String? status;
 
   @override
   Map<String, dynamic> toJson() => {
-        'toolResult': {
-          'toolUseId': toolUseId,
-          'content': content,
-          if (status != null) 'status': status,
-        },
-      };
+    'toolResult': {
+      'toolUseId': toolUseId,
+      'content': content.map((c) => c.toJson()).toList(),
+      if (status != null) 'status': status,
+    },
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -210,4 +278,46 @@ class ToolResultContentBlock extends ContentBlock {
   @override
   String toString() =>
       'ToolResultContentBlock(toolUseId: $toolUseId, status: $status)';
+}
+
+/// Content within a tool result, matching AmplifyAIToolResultContentBlockInput.
+/// Can contain: text, json, image, document.
+@immutable
+class ToolResultContent {
+  const ToolResultContent({this.text, this.json, this.image, this.document});
+
+  /// Text content in the tool result.
+  final String? text;
+
+  /// JSON content in the tool result (AWSJSON).
+  final String? json;
+
+  /// Image content in the tool result.
+  final Map<String, dynamic>? image;
+
+  /// Document content in the tool result.
+  final Map<String, dynamic>? document;
+
+  Map<String, dynamic> toJson() => {
+    if (text != null) 'text': text,
+    if (json != null) 'json': json,
+    if (image != null) 'image': image,
+    if (document != null) 'document': document,
+  };
+
+  factory ToolResultContent.fromJson(Map<String, dynamic> json) {
+    return ToolResultContent(
+      text: json['text'] as String?,
+      json: json['json'] as String?,
+      image: json['image'] as Map<String, dynamic>?,
+      document: json['document'] as Map<String, dynamic>?,
+    );
+  }
+
+  /// Convenience constructor for text-only tool result content.
+  factory ToolResultContent.text(String text) => ToolResultContent(text: text);
+
+  /// Convenience constructor for JSON tool result content.
+  factory ToolResultContent.jsonContent(String jsonStr) =>
+      ToolResultContent(json: jsonStr);
 }

@@ -4,22 +4,21 @@ import 'dart:async';
 /// Provides an abstraction over the underlying GraphQL client.
 class AIGraphQLRequestFactory {
   /// Creates a GraphQL request factory.
-  AIGraphQLRequestFactory({
-    required this.queryFn,
-    required this.mutateFn,
-  });
+  AIGraphQLRequestFactory({required this.queryFn, required this.mutateFn});
 
   /// Function to execute GraphQL queries.
   final Future<Map<String, dynamic>> Function({
     required String document,
     required Map<String, dynamic> variables,
-  }) queryFn;
+  })
+  queryFn;
 
   /// Function to execute GraphQL mutations.
   final Future<Map<String, dynamic>> Function({
     required String document,
     required Map<String, dynamic> variables,
-  }) mutateFn;
+  })
+  mutateFn;
 
   /// Executes a GraphQL query.
   Future<Map<String, dynamic>> query({
@@ -42,11 +41,13 @@ class AIGraphQLRequestFactory {
     required Future<Map<String, dynamic>> Function(
       String document,
       Map<String, dynamic> variables,
-    ) query,
+    )
+    query,
     required Future<Map<String, dynamic>> Function(
       String document,
       Map<String, dynamic> variables,
-    ) mutate,
+    )
+    mutate,
   }) {
     return AIGraphQLRequestFactory(
       queryFn: ({required document, required variables}) =>

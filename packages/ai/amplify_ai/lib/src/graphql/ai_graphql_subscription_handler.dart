@@ -4,15 +4,14 @@ import 'dart:async';
 /// Provides an abstraction over the underlying subscription mechanism.
 class AIGraphQLSubscriptionHandler {
   /// Creates a subscription handler.
-  AIGraphQLSubscriptionHandler({
-    required this.subscribeFn,
-  });
+  AIGraphQLSubscriptionHandler({required this.subscribeFn});
 
   /// Function to create GraphQL subscriptions.
   final Stream<Map<String, dynamic>> Function({
     required String document,
     required Map<String, dynamic> variables,
-  }) subscribeFn;
+  })
+  subscribeFn;
 
   /// Subscribes to a GraphQL subscription.
   Stream<Map<String, dynamic>> subscribe({
@@ -27,7 +26,8 @@ class AIGraphQLSubscriptionHandler {
     required Stream<Map<String, dynamic>> Function(
       String document,
       Map<String, dynamic> variables,
-    ) subscribe,
+    )
+    subscribe,
   }) {
     return AIGraphQLSubscriptionHandler(
       subscribeFn: ({required document, required variables}) =>

@@ -4,17 +4,15 @@ import 'content_block.dart';
 
 /// A handler function that processes a tool use request and returns the result.
 /// Mirrors the JS AI Kit tool handler pattern for bidirectional tool use.
-typedef ToolHandler = FutureOr<ToolResultContentBlock> Function(
-  ToolUseContentBlock toolUse,
-);
+typedef ToolHandler =
+    FutureOr<ToolResultContentBlock> Function(ToolUseContentBlock toolUse);
 
 /// Registry for tool use handlers in AI conversations.
 /// Supports bidirectional tool use between the client and the model.
 class ToolUseHandler {
   /// Creates a tool use handler with the given handler map.
-  ToolUseHandler({
-    Map<String, ToolHandler>? handlers,
-  }) : _handlers = handlers ?? {};
+  ToolUseHandler({Map<String, ToolHandler>? handlers})
+    : _handlers = handlers ?? {};
 
   final Map<String, ToolHandler> _handlers;
 

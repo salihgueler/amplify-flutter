@@ -2,7 +2,7 @@
 /// Generates the correct GraphQL queries, mutations, and subscriptions
 /// based on the conversation route name, matching Amplify AI Kit conventions.
 ///
-/// For a route named "chat", the generated operations are:
+/// For a conversation route named "chat", the generated operations are:
 /// - createConversationChat (mutation)
 /// - getConversationChat (query)
 /// - listConversationChats (query)
@@ -10,7 +10,9 @@
 /// - chat (mutation - send message / conversation handler)
 /// - listConversationMessageChats (query)
 /// - onCreateAssistantResponseChat (subscription)
-/// - generateChat (query - for generation routes)
+///
+/// For a generation route named "summarize", the generated operation is:
+/// - summarize (query - with typed arguments specific to each route)
 class AIGraphQLDocuments {
   /// Creates GraphQL documents for the given route.
   const AIGraphQLDocuments({required this.routeName});
@@ -51,7 +53,9 @@ class AIGraphQLDocuments {
       'onCreateAssistantResponse$_capitalizedRouteName';
 
   /// The GraphQL field name for generation.
-  String get generateFieldName => 'generate$_capitalizedRouteName';
+  /// For generation routes, the field name IS the route name itself
+  /// (e.g., "summarize", "generateCode", "describeImage").
+  String get generateFieldName => routeName;
 
   // --- GraphQL document builders ---
 
@@ -120,40 +124,20 @@ class AIGraphQLDocuments {
   /// Creates a GraphQL mutation to send a message (conversation handler).
   /// This is the primary mutation that triggers the AI model.
   /// The mutation field name is the route name itself (e.g., "chat", "pirateChat").
+  /// Arguments are passed directly (not wrapped in an "input" object):
+  /// - conversationId: ID! (required)
+  /// - content: [AmplifyAIContentBlockInput] (nullable array)
+  /// - aiContext: AWSJSON
+  /// - toolConfiguration: AmplifyAIToolConfigurationInput
   String sendMessage() {
     return '''
-      mutation $_capitalizedRouteName(\$aiContext: AWSJSON, \$content: [AmplifyAIContentBlockInput], \$conversationId: ID!, \$toolConfiguration: AmplifyAIToolConfigurationInput) {
-        $routeName(aiContext: \$aiContext, content: \$content, conversationId: \$conversationId, toolConfiguration: \$toolConfiguration) {
-          aiContext
-          associatedUserMessageId
+      mutation $_capitalizedRouteName(\$conversationId: ID!, \$content: [AmplifyAIContentBlockInput], \$aiContext: AWSJSON, \$toolConfiguration: AmplifyAIToolConfigurationInput) {
+        $routeName(conversationId: \$conversationId, content: \$content, aiContext: \$aiContext, toolConfiguration: \$toolConfiguration) {
+          id
+          conversationId
+          role
           content {
             text
-            toolResult {
-              status
-              content {
-                document {
-                  format
-                  name
-                  source {
-                    bytes
-                  }
-                }
-                image {
-                  format
-                  source {
-                    bytes
-                  }
-                }
-                json
-                text
-              }
-              toolUseId
-            }
-            toolUse {
-              input
-              name
-              toolUseId
-            }
             image {
               format
               source {
@@ -167,23 +151,34 @@ class AIGraphQLDocuments {
                 bytes
               }
             }
-          }
-          conversationId
-          createdAt
-          id
-          owner
-          role
-          toolConfiguration {
-            tools {
-              toolSpec {
-                description
-                inputSchema {
-                  json
+            toolUse {
+              toolUseId
+              name
+              input
+            }
+            toolResult {
+              toolUseId
+              status
+              content {
+                text
+                json
+                image {
+                  format
+                  source {
+                    bytes
+                  }
                 }
-                name
+                document {
+                  format
+                  name
+                  source {
+                    bytes
+                  }
+                }
               }
             }
           }
+          createdAt
           updatedAt
         }
       }
@@ -192,20 +187,24 @@ class AIGraphQLDocuments {
 
   /// Creates a GraphQL subscription for assistant response streaming.
   /// Subscribes to `onCreateAssistantResponse{RouteName}`.
+  /// The conversationId argument is required (ID!).
+  /// Returns AmplifyAIConversationMessageStreamPart fields.
   String onStreamEvent() {
     return '''
-      subscription OnCreateAssistantResponse$_capitalizedRouteName(\$conversationId: ID) {
+      subscription OnCreateAssistantResponse$_capitalizedRouteName(\$conversationId: ID!) {
         onCreateAssistantResponse$_capitalizedRouteName(conversationId: \$conversationId) {
           id
+          owner
           conversationId
           associatedUserMessageId
           contentBlockIndex
-          contentBlockDeltaIndex
           contentBlockText
+          contentBlockDeltaIndex
           contentBlockToolUse {
-            input
-            name
             toolUseId
+            name
+            input
+            type
           }
           contentBlockDoneAtIndex
           stopReason
@@ -213,7 +212,7 @@ class AIGraphQLDocuments {
             errorType
             message
           }
-          owner
+          p
         }
       }
     ''';
@@ -230,32 +229,6 @@ class AIGraphQLDocuments {
             role
             content {
               text
-              toolResult {
-                status
-                content {
-                  document {
-                    format
-                    name
-                    source {
-                      bytes
-                    }
-                  }
-                  image {
-                    format
-                    source {
-                      bytes
-                    }
-                  }
-                  json
-                  text
-                }
-                toolUseId
-              }
-              toolUse {
-                input
-                name
-                toolUseId
-              }
               image {
                 format
                 source {
@@ -267,6 +240,32 @@ class AIGraphQLDocuments {
                 name
                 source {
                   bytes
+                }
+              }
+              toolUse {
+                toolUseId
+                name
+                input
+              }
+              toolResult {
+                toolUseId
+                status
+                content {
+                  text
+                  json
+                  image {
+                    format
+                    source {
+                      bytes
+                    }
+                  }
+                  document {
+                    format
+                    name
+                    source {
+                      bytes
+                    }
+                  }
                 }
               }
             }
@@ -282,11 +281,32 @@ class AIGraphQLDocuments {
   }
 
   /// Creates a GraphQL query for generation routes.
-  /// The field name is `generate{RouteName}` (e.g., `generateSummarize`).
-  String generate() {
+  /// The field name is the route name itself (e.g., "summarize", "generateCode").
+  /// Each route has its own typed arguments and return type.
+  ///
+  /// [variables] defines the GraphQL variable declarations (e.g., '\$text: String!, \$maxLength: Int').
+  /// [args] defines the field arguments (e.g., 'text: \$text, maxLength: \$maxLength').
+  /// [selectionSet] defines the return fields (e.g., 'summary keyPoints').
+  String generate({
+    required String variables,
+    required String args,
+    required String selectionSet,
+  }) {
     return '''
-      query Generate$_capitalizedRouteName(\$input: String) {
-        generate$_capitalizedRouteName(input: \$input)
+      query $_capitalizedRouteName($variables) {
+        $routeName($args) {
+          $selectionSet
+        }
+      }
+    ''';
+  }
+
+  /// Creates a simple generation query with a single string input.
+  /// Use [generate] for typed arguments.
+  String generateSimple() {
+    return '''
+      query $_capitalizedRouteName(\$input: String) {
+        $routeName(input: \$input)
       }
     ''';
   }

@@ -45,13 +45,13 @@ class AIRouteConfig {
 
   /// Serializes to JSON.
   Map<String, dynamic> toJson() => {
-        'routeName': routeName,
-        'routeType': routeType.value,
-        if (modelId != null) 'modelId': modelId,
-        if (systemPrompt != null) 'systemPrompt': systemPrompt,
-        if (inferenceConfiguration != null)
-          'inferenceConfiguration': inferenceConfiguration!.toJson(),
-      };
+    'routeName': routeName,
+    'routeType': routeType.value,
+    if (modelId != null) 'modelId': modelId,
+    if (systemPrompt != null) 'systemPrompt': systemPrompt,
+    if (inferenceConfiguration != null)
+      'inferenceConfiguration': inferenceConfiguration!.toJson(),
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -131,9 +131,9 @@ class InferenceConfiguration {
 
   /// Serializes to JSON.
   Map<String, dynamic> toJson() => {
-        if (maxTokens != null) 'maxTokens': maxTokens,
-        if (temperature != null) 'temperature': temperature,
-        if (topP != null) 'topP': topP,
-        if (stopSequences != null) 'stopSequences': stopSequences,
-      };
+    if (maxTokens != null) 'maxTokens': maxTokens,
+    if (temperature != null) 'temperature': temperature,
+    if (topP != null) 'topP': topP,
+    if (stopSequences != null) 'stopSequences': stopSequences,
+  };
 }

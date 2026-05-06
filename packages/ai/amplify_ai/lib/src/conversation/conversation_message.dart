@@ -83,17 +83,17 @@ class ConversationMessage {
 
   /// Serializes this message to JSON.
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'conversationId': conversationId,
-        'role': role.name,
-        'content': content.map((c) => c.toJson()).toList(),
-        if (associatedUserMessageId != null)
-          'associatedUserMessageId': associatedUserMessageId,
-        if (aiContext != null) 'aiContext': aiContext,
-        if (owner != null) 'owner': owner,
-        if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
-        if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
-      };
+    'id': id,
+    'conversationId': conversationId,
+    'role': role.name,
+    'content': content.map((c) => c.toJson()).toList(),
+    if (associatedUserMessageId != null)
+      'associatedUserMessageId': associatedUserMessageId,
+    if (aiContext != null) 'aiContext': aiContext,
+    if (owner != null) 'owner': owner,
+    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+    if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+  };
 
   /// Deserializes a message from JSON.
   factory ConversationMessage.fromJson(Map<String, dynamic> json) {
