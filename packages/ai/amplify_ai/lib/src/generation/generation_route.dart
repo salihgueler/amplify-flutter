@@ -1,157 +1,65 @@
-import 'dart:async';
+import 'dart:convert';
+
+import 'package:amplify_core/amplify_core.dart';
 
 import '../graphql/ai_graphql_documents.dart';
-import '../graphql/ai_graphql_request_factory.dart';
+
+/// Response from a generation route.
+class GenerationResponse {
+  const GenerationResponse({required this.content});
+  final String content;
+
+  factory GenerationResponse.fromJson(Map<String, dynamic> json) {
+    return GenerationResponse(content: json['content'] as String? ?? '');
+  }
+}
 
 /// A route for AI generation (non-conversational, single prompt/response).
-/// Mirrors the JS AI Kit generation route pattern.
+/// Uses Amplify.API directly — no manual wiring needed.
 ///
-/// Generation routes use a GraphQL **query** (not mutation) with the pattern:
-/// `generate{RouteName}` (e.g., `generateSummarize`, `generateRecipe`).
+/// Usage:
+/// ```dart
+/// final summarizer = GenerationRoute(routeName: 'summarize');
+/// final response = await summarizer.generate(prompt: 'Summarize this...');
+/// ```
 class GenerationRoute {
-  /// Creates a generation route.
-  GenerationRoute({
-    required this.routeName,
-    required this.graphqlRequestFactory,
-  }) : _documents = AIGraphQLDocuments(routeName: routeName);
+  /// Creates a generation route that uses Amplify.API directly.
+  GenerationRoute({required this.routeName})
+      : _documents = AIGraphQLDocuments(routeName: routeName);
 
   /// The name of this generation route from the AI config.
   final String routeName;
 
-  /// The GraphQL request factory for making API calls.
-  final AIGraphQLRequestFactory graphqlRequestFactory;
-
   final AIGraphQLDocuments _documents;
 
-  /// Generates content based on a prompt.
-  /// Returns the generated content as a structured response.
-  ///
-  /// The generation route sends a GraphQL query with the arguments
-  /// defined in the schema (e.g., `description`, `input`, etc.).
-  Future<GenerationResponse> generate(
-    Map<String, dynamic> args,
-  ) async {
-    final document = _documents.generate();
-    final variables = <String, dynamic>{
-      ...args,
-    };
-
-    final response = await graphqlRequestFactory.query(
-      document: document,
-      variables: variables,
-    );
-
-    final fieldName = _documents.generateFieldName;
-    final data = response['data']?[fieldName];
-
-    // Generation can return either a String or a Map depending on the schema
-    if (data is String) {
-      return GenerationResponse(content: data);
-    } else if (data is Map<String, dynamic>) {
-      return GenerationResponse.fromJson(data);
-    }
-    return const GenerationResponse();
-  }
-
-  /// Generates content and returns a stream of text chunks.
-  Stream<String> generateStream(
-    Map<String, dynamic> args,
-  ) {
-    final controller = StreamController<String>();
-
-    _handleGeneration(
-      controller: controller,
-      args: args,
-    );
-
-    return controller.stream;
-  }
-
-  Future<void> _handleGeneration({
-    required StreamController<String> controller,
-    required Map<String, dynamic> args,
+  /// Generates content from a prompt.
+  Future<GenerationResponse> generate({
+    required String prompt,
+    Map<String, dynamic>? additionalContext,
   }) async {
-    try {
-      final result = await generate(args);
-      if (result.content != null) {
-        controller.add(result.content!);
-      }
-    } catch (e) {
-      controller.addError(e);
-    } finally {
-      await controller.close();
+    final document = _documents.generate();
+    final request = GraphQLRequest<String>(
+      document: document,
+      variables: {
+        'input': {
+          'prompt': prompt,
+          if (additionalContext != null) ...additionalContext,
+        },
+      },
+    );
+
+    final response = await Amplify.API.query(request: request).response;
+    if (response.errors.isNotEmpty) {
+      throw Exception(
+        'GraphQL errors: ${response.errors.map((e) => e.message).join(', ')}',
+      );
     }
+
+    final data = response.data != null
+        ? jsonDecode(response.data!) as Map<String, dynamic>
+        : <String, dynamic>{};
+    final fieldName = _documents.generateFieldName;
+    final resultData = data['data']?[fieldName] ?? data[fieldName] ?? data;
+    return GenerationResponse.fromJson(resultData as Map<String, dynamic>);
   }
-}
-
-/// Response from a generation request.
-class GenerationResponse {
-  /// Creates a generation response.
-  const GenerationResponse({
-    this.content,
-    this.stopReason,
-    this.usage,
-  });
-
-  /// The generated content.
-  final String? content;
-
-  /// The reason the model stopped generating.
-  final String? stopReason;
-
-  /// Token usage information.
-  final GenerationUsage? usage;
-
-  /// Deserializes from JSON.
-  factory GenerationResponse.fromJson(Map<String, dynamic> json) {
-    return GenerationResponse(
-      content: json['content'] as String?,
-      stopReason: json['stopReason'] as String?,
-      usage: json['usage'] != null
-          ? GenerationUsage.fromJson(json['usage'] as Map<String, dynamic>)
-          : null,
-    );
-  }
-
-  /// Serializes to JSON.
-  Map<String, dynamic> toJson() => {
-        if (content != null) 'content': content,
-        if (stopReason != null) 'stopReason': stopReason,
-        if (usage != null) 'usage': usage!.toJson(),
-      };
-}
-
-/// Token usage information for a generation.
-class GenerationUsage {
-  /// Creates a generation usage.
-  const GenerationUsage({
-    this.inputTokens,
-    this.outputTokens,
-    this.totalTokens,
-  });
-
-  /// The number of input tokens consumed.
-  final int? inputTokens;
-
-  /// The number of output tokens generated.
-  final int? outputTokens;
-
-  /// The total number of tokens used.
-  final int? totalTokens;
-
-  /// Deserializes from JSON.
-  factory GenerationUsage.fromJson(Map<String, dynamic> json) {
-    return GenerationUsage(
-      inputTokens: json['inputTokens'] as int?,
-      outputTokens: json['outputTokens'] as int?,
-      totalTokens: json['totalTokens'] as int?,
-    );
-  }
-
-  /// Serializes to JSON.
-  Map<String, dynamic> toJson() => {
-        if (inputTokens != null) 'inputTokens': inputTokens,
-        if (outputTokens != null) 'outputTokens': outputTokens,
-        if (totalTokens != null) 'totalTokens': totalTokens,
-      };
 }

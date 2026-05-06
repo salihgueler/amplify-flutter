@@ -1,40 +1,37 @@
-/// Amplify AI Kit — zero-boilerplate AI integration for Flutter.
+/// Amplify AI Kit for Flutter.
 ///
-/// ## Quick Start:
+/// Just works with standard Amplify setup — no extra plugin or configuration.
+///
 /// ```dart
-/// // In main.dart — configure once:
-/// await Amplify.addPlugins([AmplifyAPI()]);
+/// // Standard Amplify setup (main.dart)
+/// await Amplify.addPlugins([AmplifyAuthCognito(), AmplifyAPI()]);
 /// await Amplify.configure(amplifyConfig);
-/// AmplifyAI.instance.configure(
-///   outputsConfig: amplifyConfig,
-///   api: Amplify.API,
-/// );
 ///
-/// // In any widget — just works:
+/// // Use AI anywhere — it uses Amplify.API internally
+/// final chat = ConversationRoute(routeName: 'chat');
+/// final conversation = await chat.create();
+///
+/// // Or use the widget (from amplify_ai_ui)
 /// AmplifyAIConversation(routeName: 'chat')
 /// ```
 library amplify_ai;
 
-// Plugin (the main entry point for developers)
-export 'src/plugin/amplify_ai_plugin.dart';
+// Conversation
+export 'src/conversation/conversation.dart';
+export 'src/conversation/conversation_message.dart';
+export 'src/conversation/conversation_route.dart';
+export 'src/conversation/conversation_stream_event.dart';
+
+// Generation
+export 'src/generation/generation_route.dart';
 
 // Content types
 export 'src/content/content_block.dart';
 export 'src/content/tool_configuration.dart';
 export 'src/content/tool_use_handler.dart';
 
-// Conversation types
-export 'src/conversation/conversation.dart';
-export 'src/conversation/conversation_message.dart';
-export 'src/conversation/conversation_route.dart';
-export 'src/conversation/conversation_stream_event.dart';
-
-// Generation types
-export 'src/generation/generation_client.dart';
-export 'src/generation/generation_route.dart';
+// GraphQL documents (for advanced usage / custom queries)
+export 'src/graphql/ai_graphql_documents.dart';
 
 // Config types (read-only, for introspection)
 export 'src/config/ai_route_config.dart';
-
-// Client options
-export 'src/client/ai_client_options.dart';
