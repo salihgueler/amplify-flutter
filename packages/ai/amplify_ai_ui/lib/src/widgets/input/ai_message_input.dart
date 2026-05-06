@@ -77,7 +77,7 @@ class _AIMessageInputState extends State<AIMessageInput> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.inputBackgroundColor ?? colorScheme.surface,
+        color: theme.inputBackgroundColor,
         border: Border(
           top: BorderSide(
             color: colorScheme.outlineVariant,

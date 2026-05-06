@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 
 import '../../providers/ai_conversation_provider.dart';
-import '../../theme/ai_theme.dart';
 import 'message_bubble.dart';
 import 'streaming_text.dart';
 
@@ -44,7 +43,6 @@ class MessageList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AITheme.of(context);
 
     if (messages.isEmpty && welcomeMessage == null) {
       return const SizedBox.shrink();

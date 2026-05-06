@@ -5,7 +5,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../state/ai_client_state.dart';
 import '../state/content_from_events.dart';
 
 /// Callback for handling tool use requests from the AI.

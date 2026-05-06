@@ -8,6 +8,7 @@
 /// 2. Use the AmplifyAIConversation drop-in widget
 /// 3. Customize the theme
 /// 4. Use the AIGenerationView for single-turn generation
+library;
 
 import 'package:flutter/material.dart';
 import 'package:amplify_ai_ui/amplify_ai_ui.dart';
@@ -139,7 +140,7 @@ class ConversationDemoPage extends StatelessWidget {
         ],
       ),
       body: AITheme(
-        data: AIThemeData.fromMaterialTheme(Theme.of(context)),
+        themeData: createDefaultAITheme(context),
         child: const Center(
           child: Text(
             'Connect a ConversationClient to use\n'
@@ -162,17 +163,14 @@ class GenerationDemoPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('AI Generation')),
       body: AITheme(
-        data: AIThemeData.fromMaterialTheme(Theme.of(context)),
-        child: AIGenerationView(
-          title: 'Text Summarizer',
-          hintText: 'Paste text to summarize...',
-          generateButtonLabel: 'Summarize',
-          onGenerate: (prompt) async {
-            // Simulate generation delay
-            await Future.delayed(const Duration(seconds: 2));
-            return 'This is a simulated summary of your input. '
-                'In a real app, this would call your generation client.';
-          },
+        themeData: createDefaultAITheme(context),
+        child: const Center(
+          child: Text(
+            'Connect an AIGenerationProvider to use\n'
+            'AIGenerationView widget here.\n\n'
+            'See README for setup instructions.',
+            textAlign: TextAlign.center,
+          ),
         ),
       ),
     );
@@ -188,7 +186,7 @@ class ComponentsGalleryPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Components Gallery')),
       body: AITheme(
-        data: AIThemeData.fromMaterialTheme(Theme.of(context)),
+        themeData: createDefaultAITheme(context),
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -206,25 +204,20 @@ class ComponentsGalleryPage extends StatelessWidget {
             const SizedBox(height: 8),
             const ToolProgressIndicator(
               toolName: 'searchDatabase',
-              progress: 0.6,
-              statusMessage: 'Querying records...',
             ),
             const SizedBox(height: 16),
             const ToolProgressIndicator(
               toolName: 'fetchWeather',
-              isComplete: true,
-              statusMessage: 'Done',
             ),
             const SizedBox(height: 24),
             Text('Code Block', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            const CodeBlockView(
+            const CodeBlockContentView(
               language: 'dart',
               code:
                   'void main() {\n'
                   '  print("Hello, Amplify AI!");\n'
                   '}',
-              showLineNumbers: true,
             ),
             const SizedBox(height: 24),
             Text(
@@ -232,13 +225,11 @@ class ComponentsGalleryPage extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Row(
+            Row(
               children: [
-                SendButton(enabled: true),
-                SizedBox(width: 16),
-                SendButton(enabled: false),
-                SizedBox(width: 16),
-                SendButton(isLoading: true),
+                SendButton(onPressed: () {}, enabled: true),
+                const SizedBox(width: 16),
+                SendButton(onPressed: () {}, enabled: false),
               ],
             ),
           ],

@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 
 import '../../providers/ai_generation_provider.dart';
-import '../../theme/ai_theme.dart';
 import '../common/ai_error_view.dart';
 import '../common/ai_loading_indicator.dart';
 

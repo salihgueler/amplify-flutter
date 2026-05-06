@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 
 import '../../providers/ai_conversation_provider.dart';
-import '../../state/content_from_events.dart';
 import '../../theme/ai_theme.dart';
 import '../common/ai_avatar.dart';
 import '../common/content_block_renderer.dart';
@@ -40,15 +39,14 @@ class MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AITheme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
 
     final bubbleColor = _isUser
-        ? theme.userBubbleColor ?? colorScheme.primaryContainer
-        : theme.assistantBubbleColor ?? colorScheme.surfaceContainerHighest;
+        ? theme.userBubbleColor
+        : theme.assistantBubbleColor;
 
     final textColor = _isUser
-        ? theme.userTextColor ?? colorScheme.onPrimaryContainer
-        : theme.assistantTextColor ?? colorScheme.onSurface;
+        ? theme.userTextColor
+        : theme.assistantTextColor;
 
     final avatar = avatarBuilder?.call(message.role) ??
         AIAvatar(role: message.role);
