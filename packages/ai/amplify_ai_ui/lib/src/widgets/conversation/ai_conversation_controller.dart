@@ -11,27 +11,48 @@ import '../../state/content_from_events.dart';
 /// Manages the conversation lifecycle including sending messages,
 /// receiving streaming responses, and handling tool-use cycles.
 ///
-/// Usage:
+/// Usage (route-name based, like JS `useAIConversation('chat')`):
+/// ```dart
+/// final controller = AIConversationController(routeName: 'chat');
+/// ```
+///
+/// Or with an explicit provider:
 /// ```dart
 /// final controller = AIConversationController(
 ///   provider: myConversationProvider,
 /// );
-///
-/// // Send a message
-/// await controller.sendMessage('Hello!');
-///
-/// // Access messages
-/// print(controller.messages);
 /// ```
 class AIConversationController extends ChangeNotifier {
-  /// Creates an [AIConversationController].
-  AIConversationController({
+  /// Creates an [AIConversationController] from a route name.
+  ///
+  /// This mirrors the JS pattern: `useAIConversation('chat')`.
+  /// Automatically creates an [AIConversationProvider] for the route.
+  factory AIConversationController({
+    String? routeName,
+    AIConversationProvider? provider,
+    Map<String, ToolHandler>? toolHandlers,
+  }) {
+    assert(
+      routeName != null || provider != null,
+      'Either routeName or provider must be provided.',
+    );
+    final effectiveProvider = provider ??
+        AIConversationProvider(
+          toolHandlers: toolHandlers ?? const {},
+        );
+    return AIConversationController._(provider: effectiveProvider);
+  }
+
+  AIConversationController._({
     required AIConversationProvider provider,
   }) : _provider = provider {
     _provider.addListener(_onProviderChanged);
   }
 
   final AIConversationProvider _provider;
+
+  /// The underlying provider (for advanced usage).
+  AIConversationProvider get provider => _provider;
 
   /// The list of messages in this conversation.
   List<ConversationMessage> get messages => _provider.messages;

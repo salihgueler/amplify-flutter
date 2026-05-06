@@ -10,10 +10,18 @@ import 'ai_conversation_controller.dart';
 /// A higher-level convenience widget that wraps [AIConversation] with a
 /// provider, mirroring the AmplifyAIConversation connected component pattern.
 ///
-/// This automatically creates a controller from the given provider and
-/// disposes it when the widget is removed.
+/// This automatically creates a controller and disposes it when the widget
+/// is removed.
 ///
-/// Usage:
+/// Usage (route-name based, like JS):
+/// ```dart
+/// AmplifyAIConversation(
+///   routeName: 'chat',
+///   welcomeMessage: 'Hello! Ask me anything.',
+/// )
+/// ```
+///
+/// Or with an explicit provider:
 /// ```dart
 /// AmplifyAIConversation(
 ///   provider: myProvider,
@@ -21,20 +29,34 @@ import 'ai_conversation_controller.dart';
 /// )
 /// ```
 class AmplifyAIConversation extends StatefulWidget {
-  /// Creates an [AmplifyAIConversation].
+  /// Creates an [AmplifyAIConversation] from a route name.
+  ///
+  /// Mirrors the JS pattern: `<AIConversation routeName="chat" />`
   const AmplifyAIConversation({
     super.key,
-    required this.provider,
+    this.routeName,
+    this.provider,
+    this.toolHandlers,
     this.welcomeMessage,
     this.avatarBuilder,
     this.messageBuilder,
     this.inputBuilder,
     this.showTypingIndicator = true,
     this.allowAttachments = false,
-  });
+  }) : assert(
+          routeName != null || provider != null,
+          'Either routeName or provider must be provided.',
+        );
 
-  /// The AI conversation provider to connect to.
-  final AIConversationProvider provider;
+  /// The route name for the conversation (e.g., 'chat').
+  /// Mirrors the JS pattern: `useAIConversation('chat')`.
+  final String? routeName;
+
+  /// The AI conversation provider to connect to (alternative to routeName).
+  final AIConversationProvider? provider;
+
+  /// Tool handlers for client-side tool use.
+  final Map<String, ToolHandler>? toolHandlers;
 
   /// Optional welcome message.
   final String? welcomeMessage;
@@ -64,16 +86,25 @@ class _AmplifyAIConversationState extends State<AmplifyAIConversation> {
   @override
   void initState() {
     super.initState();
-    _controller = AIConversationController(provider: widget.provider);
+    _controller = _createController();
   }
 
   @override
   void didUpdateWidget(AmplifyAIConversation oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.provider != widget.provider) {
+    if (oldWidget.routeName != widget.routeName ||
+        oldWidget.provider != widget.provider) {
       _controller.dispose();
-      _controller = AIConversationController(provider: widget.provider);
+      _controller = _createController();
     }
+  }
+
+  AIConversationController _createController() {
+    return AIConversationController(
+      routeName: widget.routeName,
+      provider: widget.provider,
+      toolHandlers: widget.toolHandlers,
+    );
   }
 
   @override

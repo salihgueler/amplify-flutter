@@ -10,9 +10,25 @@ import '../graphql/ai_graphql_subscription_handler.dart';
 /// The Amplify AI category plugin.
 /// Provides access to AI conversation and generation routes
 /// through the Amplify plugin system.
+///
+/// Usage mirrors the JS pattern:
+/// ```dart
+/// // Configure once at startup
+/// AmplifyAI.instance.configure(...);
+///
+/// // Then use anywhere via routeName
+/// final route = AmplifyAI.instance.conversation('chat');
+/// ```
 class AmplifyAICategory {
   /// Creates the AI category.
   AmplifyAICategory();
+
+  /// The global singleton instance of the AI category.
+  ///
+  /// This enables widgets and controllers to resolve routes by name
+  /// without needing explicit dependency injection — mirroring the JS
+  /// pattern where `useAIConversation('chat')` just works.
+  static final AmplifyAICategory instance = AmplifyAICategory();
 
   AIClient? _client;
   Map<String, AIRouteConfig> _routeConfigs = {};

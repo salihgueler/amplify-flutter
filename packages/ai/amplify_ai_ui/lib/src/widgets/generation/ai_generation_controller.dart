@@ -10,15 +10,38 @@ import '../../state/ai_client_state.dart';
 ///
 /// Wraps [AIGenerationProvider] with a convenient controller interface
 /// for use with [AIGenerationView] or custom widgets.
+///
+/// Usage (route-name based):
+/// ```dart
+/// final controller = AIGenerationController(routeName: 'summarize');
+/// await controller.generate(() => generationRoute.generate(args));
+/// ```
 class AIGenerationController<T> extends ChangeNotifier {
   /// Creates an [AIGenerationController].
-  AIGenerationController({
+  ///
+  /// Provide either [routeName] (preferred, mirrors JS pattern) or [provider].
+  factory AIGenerationController({
+    String? routeName,
+    AIGenerationProvider<T>? provider,
+  }) {
+    assert(
+      routeName != null || provider != null,
+      'Either routeName or provider must be provided.',
+    );
+    final effectiveProvider = provider ?? AIGenerationProvider<T>();
+    return AIGenerationController._(provider: effectiveProvider);
+  }
+
+  AIGenerationController._({
     required AIGenerationProvider<T> provider,
   }) : _provider = provider {
     _provider.addListener(_onProviderChanged);
   }
 
   final AIGenerationProvider<T> _provider;
+
+  /// The underlying provider (for advanced usage).
+  AIGenerationProvider<T> get provider => _provider;
 
   /// The current state.
   AIClientState<T> get state => _provider.state;
