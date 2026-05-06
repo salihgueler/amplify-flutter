@@ -34,10 +34,10 @@ class AIConversationController extends ChangeNotifier {
       'Either routeName or provider must be provided.',
     );
 
-    // If routeName is given, resolve from AmplifyAI.instance
+    // If routeName is given, create a ConversationRoute directly
     ai.ConversationRoute? conversationRoute;
-    if (routeName != null && ai.AmplifyAI.instance.isConfigured) {
-      conversationRoute = ai.AmplifyAI.instance.conversation(routeName);
+    if (routeName != null) {
+      conversationRoute = ai.ConversationRoute(routeName: routeName);
     }
 
     final effectiveProvider = provider ??

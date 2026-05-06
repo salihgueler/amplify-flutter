@@ -178,7 +178,7 @@ class ConversationRoute {
   }) async {
     try {
       // Subscribe first
-      final subscriptionDoc = _documents.onCreateAssistantResponse();
+      final subscriptionDoc = _documents.onStreamEvent();
       final subscriptionRequest = GraphQLRequest<String>(
         document: subscriptionDoc,
         variables: {'conversationId': conversationId},
@@ -192,7 +192,7 @@ class ConversationRoute {
       );
 
       // Send the message
-      final mutationDoc = _documents.createMessage();
+      final mutationDoc = _documents.sendMessage();
       final mutationRequest = GraphQLRequest<String>(
         document: mutationDoc,
         variables: {
@@ -219,7 +219,7 @@ class ConversationRoute {
         controller.add(streamEvent);
 
         // Close when done
-        if (streamEvent.stopReason != null) {
+        if (streamEvent is ConversationStreamTurnDoneEvent) {
           await controller.close();
           break;
         }

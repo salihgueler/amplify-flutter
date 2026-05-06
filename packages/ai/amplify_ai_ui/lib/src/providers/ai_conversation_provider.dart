@@ -169,7 +169,7 @@ class AIConversationProvider extends ChangeNotifier {
     }
 
     // Stream the message using the amplify_ai ContentBlock type
-    final stream = route.streamMessage(
+    final stream = route.sendMessage(
       conversationId: _activeConversationId!,
       content: [ai.ContentBlock.text(userText)],
     );
