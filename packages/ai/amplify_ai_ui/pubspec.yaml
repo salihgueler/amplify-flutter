@@ -1,8 +1,6 @@
 name: amplify_ai_ui
 description: Flutter UI components for Amplify AI Kit — drop-in chat widgets, streaming text, tool cards, and generation views.
 version: 0.1.0
-homepage: https://github.com/aws-amplify/amplify-flutter
-repository: https://github.com/aws-amplify/amplify-flutter/tree/main/packages/ai/amplify_ai_ui
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

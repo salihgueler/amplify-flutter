@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:amplify_core/amplify_core.dart';
+import 'package:amplify_flutter/amplify_flutter.dart';
 
 import '../graphql/ai_graphql_documents.dart';
 

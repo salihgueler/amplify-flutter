@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:amplify_core/amplify_core.dart';
+import 'package:amplify_flutter/amplify_flutter.dart';
 
 import '../content/content_block.dart';
 import '../content/tool_configuration.dart';
