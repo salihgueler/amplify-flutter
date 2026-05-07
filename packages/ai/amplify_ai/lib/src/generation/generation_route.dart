@@ -101,7 +101,6 @@ class GenerationRoute {
     final request = GraphQLRequest<String>(
       document: document,
       variables: arguments,
-      authorizationMode: APIAuthorizationType.iam,
     );
 
     final response = await Amplify.API.query(request: request).response;
