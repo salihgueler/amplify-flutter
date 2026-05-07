@@ -168,11 +168,29 @@ class AIConversationProvider extends ChangeNotifier {
       _activeConversationId = conversation.id;
     }
 
-    // Stream the message using the amplify_ai ContentBlock type
-    final stream = route.sendMessage(
-      conversationId: _activeConversationId!,
+    // Stream the message and handle tool-use cycles automatically
+    await _streamAndHandleToolUse(
+      route: route,
       content: [ai.ContentBlock.text(userText)],
     );
+  }
+
+  /// Streams a response and recursively handles tool-use cycles.
+  ///
+  /// When the model stops with `stopReason == 'tool_use'`, this method
+  /// executes the pending tools via [toolHandlers], sends results back to
+  /// the model, and continues streaming — mirroring the JS AI Kit behavior.
+  Future<void> _streamAndHandleToolUse({
+    required ai.ConversationRoute route,
+    required List<ai.ContentBlock> content,
+  }) async {
+    final stream = route.sendMessage(
+      conversationId: _activeConversationId!,
+      content: content,
+    );
+
+    String? stopReason;
+    final pendingToolResults = <ai.ContentBlock>[];
 
     await for (final event in stream) {
       if (event is ai.ConversationStreamTextEvent) {
@@ -183,11 +201,66 @@ class AIConversationProvider extends ChangeNotifier {
           name: event.toolUse.name,
           input: event.toolUse.input,
         );
-        await handleToolUse(toolUse);
+        _accumulator.addToolUseBlock(toolUse);
+        notifyListeners();
+
+        final handler = toolHandlers[toolUse.name];
+        if (handler != null) {
+          try {
+            final result = await handler(toolUse);
+            _accumulator.addToolResultBlock(result);
+            notifyListeners();
+            // Collect tool result for sending back to the model
+            pendingToolResults.add(
+              ai.ToolResultContentBlock(
+                toolUseId: result.toolUseId,
+                content: [
+                  ai.ToolResultContent.text(
+                    result.content?.toString() ?? '',
+                  ),
+                ],
+                status: result.status == ToolResultStatus.success
+                    ? 'success'
+                    : 'error',
+              ),
+            );
+          } catch (e) {
+            final errorResult = ToolResultContent(
+              toolUseId: toolUse.toolUseId,
+              status: ToolResultStatus.error,
+              content: e.toString(),
+            );
+            _accumulator.addToolResultBlock(errorResult);
+            notifyListeners();
+            pendingToolResults.add(
+              ai.ToolResultContentBlock(
+                toolUseId: toolUse.toolUseId,
+                content: [ai.ToolResultContent.text(e.toString())],
+                status: 'error',
+              ),
+            );
+          }
+        }
       } else if (event is ai.ConversationStreamTurnDoneEvent) {
-        _finalizeAssistantMessage();
+        stopReason = event.stopReason;
         break;
       }
+    }
+
+    // Tool-use cycle: if stopped for tool_use, send results back and continue
+    if (stopReason == 'tool_use' && pendingToolResults.isNotEmpty) {
+      _finalizeAssistantMessage();
+      _accumulator.reset();
+      _isStreaming = true;
+      notifyListeners();
+
+      // Recurse — send tool results back and stream the model's continuation
+      await _streamAndHandleToolUse(
+        route: route,
+        content: pendingToolResults,
+      );
+    } else {
+      _finalizeAssistantMessage();
     }
   }
 
@@ -196,29 +269,6 @@ class AIConversationProvider extends ChangeNotifier {
     _accumulator.addTextDelta(delta);
     _streamingText = _accumulator.currentText;
     notifyListeners();
-  }
-
-  /// Handles a tool-use request from the assistant.
-  Future<void> handleToolUse(ToolUseContent toolUse) async {
-    _accumulator.addToolUseBlock(toolUse);
-    notifyListeners();
-
-    final handler = toolHandlers[toolUse.name];
-    if (handler != null) {
-      try {
-        final result = await handler(toolUse);
-        _accumulator.addToolResultBlock(result);
-        notifyListeners();
-      } catch (e) {
-        final errorResult = ToolResultContent(
-          toolUseId: toolUse.toolUseId,
-          status: ToolResultStatus.error,
-          content: e.toString(),
-        );
-        _accumulator.addToolResultBlock(errorResult);
-        notifyListeners();
-      }
-    }
   }
 
   /// Finalizes the current assistant message after streaming completes.
