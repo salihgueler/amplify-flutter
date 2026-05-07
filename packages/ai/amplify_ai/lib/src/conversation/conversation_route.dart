@@ -20,10 +20,14 @@ import 'conversation_stream_event.dart';
 /// ```
 class ConversationRoute {
   /// Creates a conversation route that uses Amplify.API directly.
+  ///
+  /// [authMode] - Optional auth mode override. If not provided, uses the default
+  ///   from Amplify configuration (typically userPool for authenticated users).
   ConversationRoute({
     required this.routeName,
     this.toolConfiguration,
     this.toolHandler,
+    this.authMode,
   }) : _documents = AIGraphQLDocuments(routeName: routeName);
 
   /// The name of this conversation route from the AI config.
@@ -36,6 +40,11 @@ class ConversationRoute {
   /// Optional tool handler for processing tool use requests.
   final ToolUseHandler? toolHandler;
 
+  /// Optional authorization mode override.
+  /// If not provided, uses the default auth mode from Amplify configuration
+  /// (typically userPool for authenticated users).
+  final APIAuthorizationType? authMode;
+
   final AIGraphQLDocuments _documents;
 
   /// Creates a new conversation.
@@ -46,6 +55,7 @@ class ConversationRoute {
       variables: {
         'input': {if (name != null) 'name': name},
       },
+      authorizationMode: authMode,
     );
 
     final response = await Amplify.API.mutate(request: request).response;
@@ -69,7 +79,10 @@ class ConversationRoute {
   /// Lists all conversations.
   Future<List<Conversation>> list() async {
     final document = _documents.listConversations();
-    final request = GraphQLRequest<String>(document: document);
+    final request = GraphQLRequest<String>(
+      document: document,
+      authorizationMode: authMode,
+    );
 
     final response = await Amplify.API.query(request: request).response;
     if (response.errors.isNotEmpty) {
@@ -96,6 +109,7 @@ class ConversationRoute {
     final request = GraphQLRequest<String>(
       document: document,
       variables: {'id': conversationId},
+      authorizationMode: authMode,
     );
 
     final response = await Amplify.API.query(request: request).response;
@@ -124,6 +138,7 @@ class ConversationRoute {
       variables: {
         'input': {'id': conversationId},
       },
+      authorizationMode: authMode,
     );
 
     final response = await Amplify.API.mutate(request: request).response;
@@ -144,6 +159,7 @@ class ConversationRoute {
           'conversationId': {'eq': conversationId},
         },
       },
+      authorizationMode: authMode,
     );
 
     final response = await Amplify.API.query(request: request).response;
@@ -239,6 +255,7 @@ class ConversationRoute {
     final subscriptionRequest = GraphQLRequest<String>(
       document: subscriptionDoc,
       variables: {'conversationId': conversationId},
+      authorizationMode: authMode,
     );
 
     final subscription = Amplify.API.subscribe(
@@ -259,6 +276,7 @@ class ConversationRoute {
         if (toolConfiguration != null)
           'toolConfiguration': toolConfiguration.toJson(),
       },
+      authorizationMode: authMode,
     );
 
     await Amplify.API.mutate(request: mutationRequest).response;

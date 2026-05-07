@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:meta/meta.dart';
 
 /// Sealed class representing content blocks in AI messages.
@@ -63,12 +65,19 @@ sealed class ContentBlock {
       );
     } else if (json.containsKey('toolUse')) {
       final toolUse = json['toolUse'] as Map<String, dynamic>;
+      final rawInput = toolUse['input'];
+      final Map<String, dynamic> parsedInput;
+      if (rawInput is Map<String, dynamic>) {
+        parsedInput = rawInput;
+      } else if (rawInput is String) {
+        parsedInput = jsonDecode(rawInput) as Map<String, dynamic>;
+      } else {
+        parsedInput = {};
+      }
       return ToolUseContentBlock(
         toolUseId: toolUse['toolUseId'] as String,
         name: toolUse['name'] as String,
-        input: toolUse['input'] is Map<String, dynamic>
-            ? toolUse['input'] as Map<String, dynamic>
-            : {},
+        input: parsedInput,
       );
     } else if (json.containsKey('toolResult')) {
       final toolResult = json['toolResult'] as Map<String, dynamic>;
@@ -209,12 +218,17 @@ class ToolUseContentBlock extends ContentBlock {
   /// The name of the tool to invoke.
   final String name;
 
-  /// The input parameters for the tool.
+  /// The input parameters for the tool (parsed from AWSJSON).
   final Map<String, dynamic> input;
 
   @override
   Map<String, dynamic> toJson() => {
-    'toolUse': {'toolUseId': toolUseId, 'name': name, 'input': input},
+    'toolUse': {
+      'toolUseId': toolUseId,
+      'name': name,
+      // input is AWSJSON type — must be stringified on the wire
+      'input': jsonEncode(input),
+    },
   };
 
   @override
@@ -289,7 +303,7 @@ class ToolResultContent {
   /// Text content in the tool result.
   final String? text;
 
-  /// JSON content in the tool result (AWSJSON).
+  /// JSON content in the tool result (AWSJSON — already a stringified JSON string).
   final String? json;
 
   /// Image content in the tool result.
@@ -305,12 +319,22 @@ class ToolResultContent {
     if (document != null) 'document': document,
   };
 
-  factory ToolResultContent.fromJson(Map<String, dynamic> json) {
+  factory ToolResultContent.fromJson(Map<String, dynamic> jsonMap) {
+    // Handle json field: it may come as a String (correct) or as a raw object
+    final rawJson = jsonMap['json'];
+    final String? jsonValue;
+    if (rawJson is String) {
+      jsonValue = rawJson;
+    } else if (rawJson != null) {
+      jsonValue = jsonEncode(rawJson);
+    } else {
+      jsonValue = null;
+    }
     return ToolResultContent(
-      text: json['text'] as String?,
-      json: json['json'] as String?,
-      image: json['image'] as Map<String, dynamic>?,
-      document: json['document'] as Map<String, dynamic>?,
+      text: jsonMap['text'] as String?,
+      json: jsonValue,
+      image: jsonMap['image'] as Map<String, dynamic>?,
+      document: jsonMap['document'] as Map<String, dynamic>?,
     );
   }
 

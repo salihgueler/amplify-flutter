@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:meta/meta.dart';
 
 /// Tool configuration for AI conversations.
@@ -55,11 +57,13 @@ class ToolSpec {
   final Map<String, dynamic> inputSchema;
 
   /// Serializes this tool spec to JSON.
+  /// Note: inputSchema.json is AWSJSON type — it must be a JSON-encoded string,
+  /// not a raw Map. This matches the JS behavior: JSON.stringify(tool.inputSchema.json)
   Map<String, dynamic> toJson() => {
     'toolSpec': {
       'name': name,
       'description': description,
-      'inputSchema': {'json': inputSchema},
+      'inputSchema': {'json': jsonEncode(inputSchema)},
     },
   };
 
@@ -68,12 +72,20 @@ class ToolSpec {
     final spec = json['toolSpec'] as Map<String, dynamic>? ?? json;
     final inputSchemaWrapper =
         spec['inputSchema'] as Map<String, dynamic>? ?? {};
+    final jsonField = inputSchemaWrapper['json'];
+    // Handle both string (AWSJSON) and raw Map formats
+    final Map<String, dynamic> parsedSchema;
+    if (jsonField is String) {
+      parsedSchema = jsonDecode(jsonField) as Map<String, dynamic>;
+    } else if (jsonField is Map<String, dynamic>) {
+      parsedSchema = jsonField;
+    } else {
+      parsedSchema = inputSchemaWrapper;
+    }
     return ToolSpec(
       name: spec['name'] as String,
       description: spec['description'] as String,
-      inputSchema:
-          inputSchemaWrapper['json'] as Map<String, dynamic>? ??
-          inputSchemaWrapper,
+      inputSchema: parsedSchema,
     );
   }
 

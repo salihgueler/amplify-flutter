@@ -62,11 +62,14 @@ class GenerationRoute {
   /// [variables] - GraphQL variable declarations (e.g., r'$text: String!, $maxLength: Int').
   /// [args] - GraphQL field arguments (e.g., r'text: $text, maxLength: $maxLength').
   /// [selectionSet] - Fields to return (e.g., 'summary keyPoints').
+  /// [authMode] - Optional auth mode override. If not provided, uses the default
+  ///   from Amplify configuration (typically userPool for authenticated users).
   GenerationRoute({
     required this.routeName,
     required this.variables,
     required this.args,
     required this.selectionSet,
+    this.authMode,
   }) : _documents = AIGraphQLDocuments(routeName: routeName);
 
   /// The name of this generation route from the AI config.
@@ -83,6 +86,11 @@ class GenerationRoute {
   /// GraphQL selection set (return fields) for this route.
   /// Example: 'summary keyPoints'
   final String selectionSet;
+
+  /// Optional authorization mode override.
+  /// If not provided, uses the default auth mode from Amplify configuration
+  /// (typically userPool for authenticated users).
+  final APIAuthorizationType? authMode;
 
   final AIGraphQLDocuments _documents;
 
@@ -101,7 +109,9 @@ class GenerationRoute {
     final request = GraphQLRequest<String>(
       document: document,
       variables: arguments,
-      authorizationMode: APIAuthorizationType.iam,
+      // Use the optional authMode if provided; otherwise let Amplify use its
+      // default from amplify_outputs.json (typically userPool for AI routes).
+      authorizationMode: authMode,
     );
 
     final response = await Amplify.API.query(request: request).response;
