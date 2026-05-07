@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:meta/meta.dart';
 
 import '../content/content_block.dart';
@@ -120,7 +122,10 @@ sealed class ConversationStreamEvent {
           name: contentBlockToolUse['name'] as String? ?? '',
           input: contentBlockToolUse['input'] is Map<String, dynamic>
               ? contentBlockToolUse['input'] as Map<String, dynamic>
-              : {},
+              : contentBlockToolUse['input'] is String
+                  ? (jsonDecode(contentBlockToolUse['input'] as String)
+                      as Map<String, dynamic>)
+                  : {},
         ),
         toolUseType: contentBlockToolUse['type'] as String?,
       );

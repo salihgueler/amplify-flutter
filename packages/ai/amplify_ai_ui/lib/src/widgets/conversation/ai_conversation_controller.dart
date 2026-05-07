@@ -24,10 +24,14 @@ class AIConversationController extends ChangeNotifier {
   ///
   /// This mirrors the JS pattern: `useAIConversation('chat')`.
   /// Automatically resolves the [ConversationRoute] from [AmplifyAI.instance].
+  ///
+  /// If [conversationId] is provided, loads existing messages to resume
+  /// a previous conversation.
   factory AIConversationController({
     String? routeName,
     AIConversationProvider? provider,
     Map<String, ToolHandler>? toolHandlers,
+    String? conversationId,
   }) {
     assert(
       routeName != null || provider != null,
@@ -43,9 +47,17 @@ class AIConversationController extends ChangeNotifier {
     final effectiveProvider = provider ??
         AIConversationProvider(
           conversationRoute: conversationRoute,
+          conversationId: conversationId,
           toolHandlers: toolHandlers ?? const {},
         );
-    return AIConversationController._(provider: effectiveProvider);
+    final controller = AIConversationController._(provider: effectiveProvider);
+
+    // If conversationId is provided, load the existing messages
+    if (conversationId != null) {
+      controller._loadHistory(conversationId);
+    }
+
+    return controller;
   }
 
   AIConversationController._({
@@ -82,6 +94,16 @@ class AIConversationController extends ChangeNotifier {
   /// Clears all messages.
   void clearMessages() {
     _provider.clearMessages();
+  }
+
+  /// Loads history messages for the given conversation ID.
+  Future<void> _loadHistory(String conversationId) async {
+    await _provider.loadMessages(conversationId);
+  }
+
+  /// Loads history messages for a conversation (public API for resuming).
+  Future<void> loadHistory(String conversationId) async {
+    await _provider.loadMessages(conversationId);
   }
 
   void _onProviderChanged() {

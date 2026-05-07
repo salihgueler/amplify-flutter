@@ -53,17 +53,25 @@ class GraphQLRequest<T> {
   /// See https://docs.amplify.aws/lib/graphqlapi/advanced-workflows/q/platform/flutter/.
   final ModelType? modelType;
 
+  /// Optional authorization mode override for this specific request.
+  /// When set, this overrides the default authorization mode configured for the API.
+  /// Use [APIAuthorizationType.iam] for IAM-authorized requests (e.g., generation routes).
+  final APIAuthorizationType? authorizationMode;
+
   GraphQLRequest(
       {this.apiName,
       required this.document,
       this.variables = const <String, dynamic>{},
       this.decodePath,
-      this.modelType});
+      this.modelType,
+      this.authorizationMode});
 
   Map<String, dynamic> serializeAsMap() => <String, dynamic>{
         'document': document,
         'variables': variables,
         'cancelToken': id,
         if (apiName != null) 'apiName': apiName,
+        if (authorizationMode != null)
+          'authMode': authorizationMode!.rawValue,
       };
 }

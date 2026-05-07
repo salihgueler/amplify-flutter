@@ -160,11 +160,18 @@ class ConversationRoute {
     final items =
         (data['data']?[fieldName]?['items'] ?? data[fieldName]?['items'] ?? [])
             as List;
-    return items
+    final messages = items
         .map(
           (item) => ConversationMessage.fromJson(item as Map<String, dynamic>),
         )
         .toList();
+    // Sort messages by createdAt in chronological order
+    messages.sort((a, b) {
+      final aTime = a.createdAt ?? DateTime(0);
+      final bTime = b.createdAt ?? DateTime(0);
+      return aTime.compareTo(bTime);
+    });
+    return messages;
   }
 
   /// Sends a message and returns a stream of response events.
@@ -172,13 +179,17 @@ class ConversationRoute {
   /// The [toolConfiguration] parameter allows passing tool configuration
   /// with the message. If not provided, uses the route-level toolConfiguration.
   /// The [aiContext] parameter allows passing additional AI context as JSON.
+  /// The [toolHandler] parameter allows passing a per-call tool handler that
+  /// overrides the route-level handler for this message's tool-use cycle.
   Stream<ConversationStreamEvent> sendMessage({
     required String conversationId,
     required List<ContentBlock> content,
     ToolConfiguration? toolConfiguration,
     Map<String, dynamic>? aiContext,
+    ToolUseHandler? toolHandler,
   }) {
     final controller = StreamController<ConversationStreamEvent>();
+    final effectiveToolHandler = toolHandler ?? this.toolHandler;
 
     _sendAndStream(
       conversationId: conversationId,
@@ -186,6 +197,7 @@ class ConversationRoute {
       toolConfiguration: toolConfiguration ?? this.toolConfiguration,
       aiContext: aiContext,
       controller: controller,
+      toolHandler: effectiveToolHandler,
     );
 
     return controller.stream;
@@ -197,57 +209,107 @@ class ConversationRoute {
     ToolConfiguration? toolConfiguration,
     Map<String, dynamic>? aiContext,
     required StreamController<ConversationStreamEvent> controller,
+    ToolUseHandler? toolHandler,
   }) async {
     try {
-      // Subscribe first
-      final subscriptionDoc = _documents.onStreamEvent();
-      final subscriptionRequest = GraphQLRequest<String>(
-        document: subscriptionDoc,
-        variables: {'conversationId': conversationId},
+      await _doSendAndStream(
+        conversationId: conversationId,
+        content: content,
+        toolConfiguration: toolConfiguration,
+        aiContext: aiContext,
+        controller: controller,
+        toolHandler: toolHandler,
       );
-
-      final subscription = Amplify.API.subscribe(
-        subscriptionRequest,
-        onEstablished: () {
-          safePrint('AI subscription established for $routeName');
-        },
-      );
-
-      // Send the message - variables are passed directly (not wrapped in "input")
-      final mutationDoc = _documents.sendMessage();
-      final mutationRequest = GraphQLRequest<String>(
-        document: mutationDoc,
-        variables: {
-          'conversationId': conversationId,
-          'content': content.map((c) => c.toJson()).toList(),
-          if (aiContext != null) 'aiContext': jsonEncode(aiContext),
-          if (toolConfiguration != null)
-            'toolConfiguration': toolConfiguration.toJson(),
-        },
-      );
-
-      await Amplify.API.mutate(request: mutationRequest).response;
-
-      // Listen to subscription events
-      await for (final event in subscription) {
-        if (event.data == null) continue;
-        final data = jsonDecode(event.data!) as Map<String, dynamic>;
-        final fieldName = _documents.onAssistantResponseFieldName;
-        final eventData = data['data']?[fieldName] ?? data[fieldName] ?? data;
-        final streamEvent = ConversationStreamEvent.fromJson(
-          eventData as Map<String, dynamic>,
-        );
-        controller.add(streamEvent);
-
-        // Close when done
-        if (streamEvent is ConversationStreamTurnDoneEvent) {
-          await controller.close();
-          break;
-        }
-      }
     } catch (e) {
       controller.addError(e);
       await controller.close();
+    }
+  }
+
+  Future<void> _doSendAndStream({
+    required String conversationId,
+    required List<ContentBlock> content,
+    ToolConfiguration? toolConfiguration,
+    Map<String, dynamic>? aiContext,
+    required StreamController<ConversationStreamEvent> controller,
+    ToolUseHandler? toolHandler,
+  }) async {
+    // Subscribe first
+    final subscriptionDoc = _documents.onStreamEvent();
+    final subscriptionRequest = GraphQLRequest<String>(
+      document: subscriptionDoc,
+      variables: {'conversationId': conversationId},
+    );
+
+    final subscription = Amplify.API.subscribe(
+      subscriptionRequest,
+      onEstablished: () {
+        safePrint('AI subscription established for $routeName');
+      },
+    );
+
+    // Send the message - variables are passed directly (not wrapped in "input")
+    final mutationDoc = _documents.sendMessage();
+    final mutationRequest = GraphQLRequest<String>(
+      document: mutationDoc,
+      variables: {
+        'conversationId': conversationId,
+        'content': content.map((c) => c.toJson()).toList(),
+        if (aiContext != null) 'aiContext': jsonEncode(aiContext),
+        if (toolConfiguration != null)
+          'toolConfiguration': toolConfiguration.toJson(),
+      },
+    );
+
+    await Amplify.API.mutate(request: mutationRequest).response;
+
+    // Collect tool use events for the tool cycle
+    final pendingToolUses = <ToolUseContentBlock>[];
+
+    // Listen to subscription events
+    await for (final event in subscription) {
+      if (event.data == null) continue;
+      final data = jsonDecode(event.data!) as Map<String, dynamic>;
+      final fieldName = _documents.onAssistantResponseFieldName;
+      final eventData = data['data']?[fieldName] ?? data[fieldName] ?? data;
+      final streamEvent = ConversationStreamEvent.fromJson(
+        eventData as Map<String, dynamic>,
+      );
+      controller.add(streamEvent);
+
+      // Collect tool use events
+      if (streamEvent is ConversationStreamToolUseEvent) {
+        pendingToolUses.add(streamEvent.toolUse);
+      }
+
+      // Handle turn done
+      if (streamEvent is ConversationStreamTurnDoneEvent) {
+        // If stopReason is 'tool_use' and we have a handler, execute tools
+        // and send results back to continue the conversation
+        if (streamEvent.stopReason == 'tool_use' &&
+            toolHandler != null &&
+            pendingToolUses.isNotEmpty) {
+          final toolResults = <ContentBlock>[];
+          for (final toolUse in pendingToolUses) {
+            final result = await toolHandler.handleToolUse(toolUse);
+            toolResults.add(result);
+          }
+          pendingToolUses.clear();
+
+          // Send tool results back and continue streaming
+          await _doSendAndStream(
+            conversationId: conversationId,
+            content: toolResults,
+            toolConfiguration: toolConfiguration,
+            aiContext: aiContext,
+            controller: controller,
+            toolHandler: toolHandler,
+          );
+        } else {
+          await controller.close();
+        }
+        break;
+      }
     }
   }
 }
